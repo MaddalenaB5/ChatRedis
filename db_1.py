@@ -11,8 +11,13 @@ r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com'
 print('Connesso')
 
 # Aggiungi una chiave-valore
-r.set('William', 1)
+r.set('Luca', 3)
 
 # Recupera il valore associato alla chiave
-valore = r.get('William')
+valore = r.get('Luca')
 print(valore)
+
+
+
+
+
