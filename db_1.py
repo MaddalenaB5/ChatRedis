@@ -48,12 +48,6 @@ def aggiungi_contatto(contatti, elementi, nome):
         r.rpush(contatti, elementi)
         print(f"Aggiunti {elementi} alla lista {contatti}")
 
-
-#menù
-scelta = int(input("cosa vuoi fare? "))
-print("1. registrati")
-print("2. accedi")
-
 # Funzione per modificare la modalità Do Not Disturb
 def DND(nome):
     scelta1 = input("Vuoi modificare la modalità Do Not Disturb: si / no ").lower()
