@@ -12,39 +12,12 @@ print('Connesso')
 # Funzione di registrazione
 def registrazione():
     nome = input("Inserisci il nome utente che vuoi usare: ")
-    password = input("Inserisci la password che vuoi usare: ")
 
     # Controllo se il nome utente esiste già
-    utente_esistente = False
-    for key in r.scan_iter("nome:*"):
-        stored_nome = key.split(":")[1]  # Estrarre il nome utente dalla chiave
-        if nome == stored_nome:
-            utente_esistente = True
-            break
-
-    if utente_esistente:
-        print("Nome utente già presente. Riprova.")
-    else:
-        # Memorizza il nuovo utente
+    if r.get(nome) == None:
+        password = input("Inserisci la password che vuoi usare: ")
         r.hset(nome, "passw", password)
         print("Registrazione completata con successo.")
-
-#funzione accedi
-def accedi():
-    pass
-
-#menù
-print("1. registrati")
-print("2. accedi")
-
-scelta = int(input("Cosa vuoi fare? "))
-
-if scelta == 1:
-    registrazione()
-else:
-    accedi()
-
-
 #login
 def login():
     nome = input('Inserisci il tuo nome utente')
@@ -60,3 +33,13 @@ def login():
             print("Login riuscito!")
         else:
             print("Password errata.")
+
+#funzione accedi
+
+#menù
+scelta = int(input("cosa vuoi fare? "))
+print("1. registrati")
+print("2. accedi")
+
+if scelta == 1:
+    registrazione()
