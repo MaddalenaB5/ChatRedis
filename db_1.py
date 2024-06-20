@@ -16,7 +16,7 @@ def registrazione():
     # Controllo se il nome utente esiste già
     if r.get(nome) == None:
         password = input("Inserisci la password che vuoi usare: ")
-        r.hset(nome, "passw", password)
+        r.hset(nome, "passw", password, "DnD", 0)
         print("Registrazione completata con successo.")
 #login
 def login():
