@@ -12,22 +12,15 @@ print('Connesso')
 # Funzione di registrazione
 def registrazione():
     nome = input("Inserisci il nome utente che vuoi usare: ")
-    password = input("Inserisci la password che vuoi usare: ")
 
     # Controllo se il nome utente esiste già
-    utente_esistente = False
-    for key in r.scan_iter("nome:*"):
-        stored_nome = key.split(":")[1]  # Estrarre il nome utente dalla chiave
-        if nome == stored_nome:
-            utente_esistente = True
-            break
-
-    if utente_esistente:
-        print("Nome utente già presente. Riprova.")
-    else:
-        # Memorizza il nuovo utente
+    if redis.get(nome) == None:
+        password = input("Inserisci la password che vuoi usare: ")
         r.hset(nome, "passw", password)
         print("Registrazione completata con successo.")
+    else: 
+        print("Nome utente già presente. Riprova.")
+        
 
 #funzione accedi
 def accedi():
