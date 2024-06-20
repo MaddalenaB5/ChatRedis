@@ -34,9 +34,10 @@ def accedi():
     pass
 
 #menù
-scelta = input(int("cosa vuoi fare?"))
 print("1. registrati")
 print("2. accedi")
+
+scelta = int(input("Cosa vuoi fare? "))
 
 if scelta == 1:
     registrazione()
