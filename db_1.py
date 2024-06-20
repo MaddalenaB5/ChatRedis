@@ -16,3 +16,18 @@ print('Connesso')
 # Recupera il valore associato alla chiave
 valore = r.get('Luca')
 print(valore)
+
+
+def login():
+    nome = input('Inserisci il tuo nome utente')
+    password = input('Inserisci la password')
+
+    pass_salvate = r.hget('Nome', nome)
+    if stored_password is None:
+        print("Nome utente non trovato. Registrazione necessaria.")
+    else:
+        stored_password = stored_password.decode('utf-8')
+        if stored_password == password:
+            print("Login riuscito!")
+        else:
+            print("Password errata.")
