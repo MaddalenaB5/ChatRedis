@@ -20,22 +20,6 @@ def registrazione():
         print("Registrazione completata con successo.")
     else: 
         print("Nome utente già presente. Riprova.")
-        
-
-#funzione accedi
-def accedi():
-    pass
-
-#menù
-scelta = input(int("cosa vuoi fare?"))
-print("1. registrati")
-print("2. accedi")
-
-if scelta == 1:
-    registrazione()
-else:
-    accedi()
-
 
 #login
 def login():
@@ -52,3 +36,17 @@ def login():
             print("Login riuscito!")
         else:
             print("Password errata.")
+
+#funzione accedi
+def accedi():
+    pass
+
+#menù
+scelta = input(int("cosa vuoi fare?"))
+print("1. registrati")
+print("2. accedi")
+
+if scelta == 1:
+    registrazione()
+else:
+    accedi()
