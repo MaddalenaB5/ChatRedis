@@ -30,23 +30,22 @@ def login():
 
     if pass_salvate is None:
         print("Nome utente non trovato. Registrazione necessaria.")
+        return None
     else:
         if pass_salvate == password:
             print("Login riuscito!")
-            return True
+            return nome
         else:
             print("Password errata.")
-            return False
+            return None
 
-#aggiungi contatti
-contatti = []
-
-def aggiungi_contatto(contatti, elementi, nome):
-    if r.get(nome) == None:
+# Funzione per aggiungere contatti
+def aggiungi_contatto(nome, contatto):
+    if r.hget(f"user:{contatto}", "passw") is None:
         print('Utente non esistente')
     else:    
-        r.rpush(contatti, elementi)
-        print(f"Aggiunti {elementi} alla lista {contatti}")
+        r.rpush(f"contatti:{nome}", contatto)
+        print(f"Aggiunto {contatto} alla lista contatti di {nome}")
 
 # Funzione per modificare la modalità Do Not Disturb
 def DND(nome):
@@ -66,8 +65,19 @@ while True:
     if azione == "registrazione":
         registrazione()
     elif azione == "login":
-        if login():
-            nome = input("Inserisci il tuo nome utente per modificare la modalità Do Not Disturb: ")
-            DND(nome)
+        nome = login()
+        if nome:
+            while True:
+                scelta = input("Cosa vuoi fare? (DND/aggiungi contatto/logout): ").lower()
+                if scelta == "dnd":
+                    DND(nome)
+                elif scelta == "aggiungi contatto":
+                    contatto = input("Inserisci il nome del contatto da aggiungere: ")
+                    aggiungi_contatto(nome, contatto)
+                elif scelta == "logout":
+                    print("Logout effettuato.")
+                    break
+                else:
+                    print("Scelta non valida. Riprova.")
     else:
         print("Scelta non valida. Riprova.")
