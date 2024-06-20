@@ -34,6 +34,17 @@ def login():
         else:
             print("Password errata.")
 
+#aggiungi contatti
+contatti = []
+
+def aggiungi_contatto(contatti, elementi, nome):
+    if r.get(nome) == None:
+        print('Utente non esistente')
+    else:    
+        r.rpush(contatti, elementi)
+        print(f"Aggiunti {elementi} alla lista {contatti}")
+
+
 #menù
 scelta = int(input("cosa vuoi fare? "))
 print("1. registrati")
