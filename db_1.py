@@ -65,12 +65,12 @@ def aggiungi_contatto(nome, contatto):
 def DND(user): # User è il nome dell'utente in sessione.
     scelta1 = input("Vuoi modificare la modalità Do Not Disturb: si / no ").lower()
     if scelta1 == "si":
-        val = r.hget(f"user:{nome}", "DnD")
+        val = r.hget(f"user:{user}", "DnD")
         if val == "0":
-            r.hset(f"user:{nome}", "DnD", 1)
+            r.hset(f"user:{user}", "DnD", 1)
             print("Modalità Do Not Disturb attivata.")
         else:
-            r.hset(f"user:{nome}", "DnD", 0)
+            r.hset(f"user:{user}", "DnD", 0)
             print("Modalità Do Not Disturb disattivata.")
 
 # Esecuzione delle funzioni
