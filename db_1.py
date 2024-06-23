@@ -1,7 +1,7 @@
-import redis
+import redis as red
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
-r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
+r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
                 port=18934,
                 db=0,
                 charset="utf-8",
@@ -9,40 +9,58 @@ r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com'
                 password='4GVWbKjMnaiMtHaX56tTNKODmzblmYtq')
 print('Connesso')
 
-"""
-def crea_utente(username, password, contatti, stato):
-  # Creare un hash Redis per l'utente
-  utente_hash = {"username": username,
-                 "password": password,
-                 "contatti": contatti,
-                 "stato": stato}
-
-  # Memorizzare l'hash Redis nel database
-  r.hset("utenti", username, utente_hash)
-
-"""
-
+# FUNZIONE DI REGISTRAZIONE
+#possibile soluzione
+'''
 # Funzione di registrazione
-def registrazione():
+def registrazione(contatti = [], stato = 0):
     nome = input("Inserisci il nome utente che vuoi usare: ")
-
     # Controllo se il nome utente esiste già
-    if r.hget(f"user:{nome}", "passw") is None:
+    if red.hget(f"user:{nome}", "passw") is None:
+        user = nome
         password = input("Inserisci la password che vuoi usare: ")
-        r.hset(f"user:{nome}",
-               mapping={"passw": password,
-                        "Contatti": [],
-                        "DnD": 0})
+        # Creare un hash Redis per l'utente
+        utente_hash = {"username": user,
+                       "password": password,
+                       "contatti": contatti,
+                       "stato": stato}
+        red.hset("utenti", user, utente_hash)
         print("Registrazione completata con successo.")
     else:
         print("Nome utente già presente. Riprova.")
+'''
+
+#prova da controllare (mi piace di più)
+# Funzione di registrazione
+def registrazione(contatti = []):
+    nome = input("Inserisci il nome utente che vuoi usare: ")
+    # Controllo se il nome utente esiste già
+    if red.hget(f"user:{nome}") is None:                                      #controlla solo l'esistenza del nome
+        user = nome                                                         #inizio a distinguere nome (ricerca) da user (utente in sessione)
+        password = input("Inserisci la password che vuoi usare: ")
+        statoUt = f"DnD : {user}"                                           #funzione per la bitmap
+        red.setbit(statoUt, 0, 0)                                             #setting del valore che deve assumere
+        # Creare un hash Redis per l'utente
+        utente_hash = {"username": user,
+                       "password": password,
+                       "contatti": contatti,
+                       "DnD": statoUt}                                      #inserimento della bitmap all'interno della ash
+        r.hset("utenti", nome, utente_hash)
+        print("Registrazione completata con successo.")
+    else:
+        print("Nome utente già presente. Riprova.")
+
+
+
+
+
 
 # Funzione di login
 def login():
     nome = input('Inserisci il tuo nome utente: ')
     password = input('Inserisci la password: ')
 
-    pass_salvate = r.hget(f"user:{nome}", "passw")
+    pass_salvate = red.hget(f"user:{nome}", "passw")
 
     if pass_salvate == password:
         print("Login riuscito!")
@@ -53,10 +71,10 @@ def login():
 
 # Funzione per aggiungere contatti
 def aggiungi_contatto(nome, contatto):
-    if r.hget(f"user:{contatto}") is None: # Si controlla l'estistenza del contatto nel db
+    if red.hget(f"user:{contatto}") is None: # Si controlla l'estistenza del contatto nel db
         print('Utente non esistente')
     else:    # Dovremo controllare se il contatto è già presente nella lista
-        r.rpush(f"contatti:{nome}", contatto)
+        red.rpush(f"contatti:{nome}", contatto)
         print(f"Aggiunto {contatto} alla lista contatti di {nome}") # Altrimenti lo si aggiunge.
 
 
@@ -65,12 +83,12 @@ def aggiungi_contatto(nome, contatto):
 def DND(user): # User è il nome dell'utente in sessione.
     scelta1 = input("Vuoi modificare la modalità Do Not Disturb: si / no ").lower()
     if scelta1 == "si":
-        val = r.hget(f"user:{user}", "DnD")
+        val = red.hget(f"user:{user}", "DnD")
         if val == "0":
-            r.hset(f"user:{user}", "DnD", 1)
+            red.hset(f"user:{user}", "DnD", 1)
             print("Modalità Do Not Disturb attivata.")
         else:
-            r.hset(f"user:{user}", "DnD", 0)
+            red.hset(f"user:{user}", "DnD", 0)
             print("Modalità Do Not Disturb disattivata.")
 
 # Esecuzione delle funzioni
