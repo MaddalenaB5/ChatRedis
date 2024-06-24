@@ -50,11 +50,6 @@ def registrazione(contatti = []):
     else:
         print("Nome utente già presente. Riprova.")
 
-
-
-
-
-
 # Funzione di login
 def login():
     nome = input('Inserisci il tuo nome utente: ')
