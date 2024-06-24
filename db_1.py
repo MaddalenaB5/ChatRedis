@@ -64,13 +64,38 @@ def login():
         print("Qualcosa è andato storto. Non tornare più!")
         return None
 
-# Funzione per aggiungere contatti
-def aggiungi_contatto(nome, contatto):
+# Funzione per aggiungere nuovi contatti
+def aggiungi_contatto(user, contatto):
     if red.hget(f"user:{contatto}") is None: # Si controlla l'estistenza del contatto nel db
         print('Utente non esistente')
-    else:    # Dovremo controllare se il contatto è già presente nella lista
-        red.rpush(f"contatti:{nome}", contatto)
-        print(f"Aggiunto {contatto} alla lista contatti di {nome}") # Altrimenti lo si aggiunge.
+    else: #controlla che non sia già presente nella lista contatti
+        lista_contatti = red.lrange(f"contatti:{user}", 0, -1)  #restituisce la lista dei contatti
+        if contatto.encode('utf-8') in lista_contatti:
+            print('Contatto già presente')
+        else:
+            red.rpush(f"contatti:{user}", contatto) #qui aggiungo a contatti (una lista) dell'utente il contatto che vuole aggiungere
+            print(f"Aggiunto {contatto} alla lista contatti di {user}")
+
+#Funzione per visalizzare i contatti
+def contatti_utente(user):
+    lista_contatti = red.lrange(f"contatti:{user}", 0, -1) #stesso metodo presente nell'aggiungi contatti
+    if not lista_contatti:  # In caso la lista sia vuota
+        print(f"Non hai contatti da visualizzare")
+    else:
+        print(f"I tuoi contatti sono:")
+        for contatto in lista_contatti:
+            print(contatto.decode('utf-8'))
+
+#Funzione di ricerca utenti parziale
+def ricerca_utente_parziale(utente_parziale):
+    utenti_tutti = red.keys("user:*") #qui si trovano tutti i nomi utenti
+    utenti_trovati = [] #qui si crea una lista con tutti i nomi utenti
+    for i in utenti_tutti: #qui fa la ricerca parziale
+        utente = i.decode('utf-8').split(':')[1] # divide user dal suo valore e restituisce quindi il nome associato
+        if utente_parziale in utente:
+            utenti_trovati.append(utente)
+    return utenti_trovati
+
 
 
 # Funzione per modificare la modalità Do Not Disturb
