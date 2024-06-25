@@ -54,6 +54,18 @@ def ricerca_utenti(user):
         
         return risultati
     
+#funzione lista contatti con creazione della lista vuota
+def contatti_utente(user):
+    lista_contatti_chiave = f"contatti:{user}" #qui creiamo la stringa che rappresenta la chiave "lista_contatti" che inseriremo poi nell'hash dell'user
+    red.hset("dati_utente", "contatti", lista_contatti_chiave) #qui creiamo la  chiave "contatti" nell'hash "dati_utente" con valore "lista_contatti_chiave"
+    lista_contatti = red.lrange(lista_contatti_chiave, 0, -1) #stesso metodo presente nell'aggiungi contatti
+    if not lista_contatti:  # In caso la lista sia vuota
+        print(f"Non hai contatti da visualizzare")
+    else:
+        print(f"I tuoi contatti sono:")
+        for contatto in lista_contatti:
+            print(contatto.decode('utf-8'))
+    
 #primo menù
 def main():
     while True:
