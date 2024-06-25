@@ -164,7 +164,7 @@ while True:
                     DND(nome)
                 elif scelta == "aggiungi contatto":
                     contatto = input("Inserisci il nome del contatto da aggiungere: ")
-                    aggiungi_contatto(nome, contatto)
+                    #aggiungi_contatto(nome, contatto)
                 elif scelta == "logout":
                     print("Logout effettuato.")
                     break
