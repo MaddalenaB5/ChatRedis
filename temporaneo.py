@@ -16,7 +16,7 @@ def hash_password(password):
 
 #funzione registrazione
 def registrazione(username, password):
-    if r.hexists(f"utenti:{username}", username):
+    if r.hexists(f"utenti:{username}", "nome"):
         print("Nome Utente già utilizzato. Sceglierne un'altro...")
         return False
     password_hash = hash_password(password)
@@ -32,11 +32,11 @@ def registrazione(username, password):
 
 #funzione di login
 def login(username, password):
-    if not r.hexists("utenti", username):
+    if not r.hexists(f"utenti:{username}", "nome"):
         print("Nome utente inesistente o password sbagliata. Riprovare...")
         return False
     
-    password_salvata = r.hget(username, "password")
+    password_salvata = r.hget(f"utenti:{username}", "password")
     if password_salvata == hash_password(password):
         print("Benvenuto!")
         return True

@@ -1,5 +1,6 @@
 import redis as red
 import getpass
+import hashlib
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
 r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
@@ -10,61 +11,42 @@ r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
                 password='4GVWbKjMnaiMtHaX56tTNKODmzblmYtq')
 print('Connesso')
 
-# FUNZIONE DI REGISTRAZIONE
-#possibile soluzione
-'''
-# Funzione di registrazione
-def registrazione(contatti = [], stato = 0):
-    nome = input("Inserisci il nome utente che vuoi usare: ")
-    # Controllo se il nome utente esiste già
-    if red.hget(f"user:{nome}", "passw") is None:
-        user = nome
-        password = input("Inserisci la password che vuoi usare: ")
-        # Creare un hash Redis per l'utente
-        utente_hash = {"username": user,
-                       "password": password,
-                       "contatti": contatti,
-                       "stato": stato}
-        red.hset("utenti", user, utente_hash)
-        print("Registrazione completata con successo.")
-    else:
-        print("Nome utente già presente. Riprova.")
-'''
+#Converte la password in un hash per motivi di sicurezza
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 #prova da controllare (mi piace di più)
 # Funzione di registrazione
 def registrazione(username, password):
-    nome = input("Inserisci il nome utente che vuoi usare: ")
-    # Controllo se il nome utente esiste già
-    if red.hget(f"user:{nome}") is None:                                      #controlla solo l'esistenza del nome
-        user = nome                                                         #inizio a distinguere nome (ricerca) da user (utente in sessione)
-        password = input("Inserisci la password che vuoi usare: ")
-        statoUt = f"DnD : {user}"                                           #funzione per la bitmap
-        red.setbit(statoUt, 0, 0)                                             #setting del valore che deve assumere
-        # Creare un hash Redis per l'utente
-        utente_hash = {"username": user,
-                       "password": password,
-                       "contatti": contatti,
-                       "DnD": statoUt}                                      #inserimento della bitmap all'interno della ash
-        r.hset("utenti", nome, utente_hash)
-        print("Registrazione completata con successo.")
-    else:
-        print("Nome utente già presente. Riprova.")
+    if r.hexists(f"utenti:{username}", "nome"):
+        print("Nome Utente già utilizzato. Sceglierne un'altro...")
+        return False
+    password_hash = hash_password(password)
+    dati_utente = {
+        "nome": username,
+        "password": password_hash,
+        "contatti": [],
+        "dnd" : 0
+        }
+    
+    r.hset(f"utenti:{username}", dati_utente)
+    return True
 
 # Funzione di login
-def login():
-    nome = input('Inserisci il tuo nome utente: ')
-    password = input('Inserisci la password: ')
-
-    pass_salvate = red.hget(f"user:{nome}", "passw")
-
-    if pass_salvate == password:
-        print("Login riuscito!")
-        return nome
+def login(username, password):
+    if not r.hexists(f"utenti:{username}", "nome"):
+        print("Nome utente inesistente o password sbagliata. Riprovare...")
+        return False
+    
+    password_salvata = r.hget(f"utenti:{username}", "password")
+    if password_salvata == hash_password(password):
+        print("Benvenuto!")
+        return True
     else:
-        print("Qualcosa è andato storto. Non tornare più!")
-        return None
+        print("Nome utente inesistente o password sbagliata. Riprovare...")
+        return False
 
+'''
 #ricerca utenti anche parziale
 def ricerca_utenti(user):
     nomi_presenti = r.hkeys("utenti")
@@ -74,7 +56,7 @@ def ricerca_utenti(user):
             risultati.append(nome_utente)
         
         return risultati
-    
+
 
 # Funzione per aggiungere nuovi contatti
 def aggconta(user):
@@ -102,7 +84,7 @@ def contatti_utente(user):
         for contatto in lista_contatti:
             print(contatto.decode('utf-8'))
 
-
+'''
 
 # Funzione primo menù
 def main():
@@ -136,7 +118,7 @@ def main():
             '''
 
 
-
+'''
 # Funzione per modificare la modalità Do Not Disturb
 
 def DND(user): # User è il nome dell'utente in sessione.
@@ -173,11 +155,7 @@ while True:
     else:
         print("Scelta non valida. Riprova.")
 
-
-#Converte la password in un hash per motivi di sicurezza
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
+'''
 
 #per entrare nel primo     
 if __name__ == "__main__":
