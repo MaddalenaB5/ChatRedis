@@ -16,7 +16,7 @@ def hash_password(password):
 
 #funzione registrazione
 def registrazione(username, password):
-    if r.hexists("utenti", username):
+    if r.hexists(f"utenti:{username}", username):
         print("Nome Utente già utilizzato. Sceglierne un'altro...")
         return False
     password_hash = hash_password(password)
@@ -27,7 +27,7 @@ def registrazione(username, password):
         "dnd" : 0
         }
     
-    r.hset("utenti", username, dati_utente)
+    r.hset(f"utenti:{username}", dati_utente)
     return True
 
 #funzione di login
@@ -57,7 +57,7 @@ def ricerca_utenti(nome):
 #primo menù
 def main():
     while True:
-        scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q per uscire): ").lower()
+        scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
         
         if scelta == "q":
             break
@@ -84,8 +84,8 @@ def main2(usernameloggato, loggato):
     while True:
         scelta = input("""Benvenuto! Vuoi:
                        - (a)ggiungere un nuovo contatto?
-                       - vuoi (c)hattare con un contatto?
-                       - vuoi cambiare lo stato del (d)o not disturb?
+                       - (c)hattare con un contatto?
+                       - cambiare lo stato del (d)o not disturb?
                        - (t) per tornare. """).lower()
         
         if scelta == "t":

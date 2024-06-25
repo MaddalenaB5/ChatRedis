@@ -1,4 +1,5 @@
 import redis as red
+import getpass
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
 r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
@@ -32,7 +33,7 @@ def registrazione(contatti = [], stato = 0):
 
 #prova da controllare (mi piace di più)
 # Funzione di registrazione
-def registrazione(contatti = []):
+def registrazione(username, password):
     nome = input("Inserisci il nome utente che vuoi usare: ")
     # Controllo se il nome utente esiste già
     if red.hget(f"user:{nome}") is None:                                      #controlla solo l'esistenza del nome
@@ -96,6 +97,37 @@ def ricerca_utente_parziale(utente_parziale):
             utenti_trovati.append(utente)
     return utenti_trovati
 
+# Funzione primo menù
+def main():
+    while True:
+        scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
+        
+        match scelta:
+            case "q":
+                break
+            case "r":
+                username = input("Inserire l'username: ")
+                password = getpass.getpass("Inserire la password: ")
+                registrazione(username, password)
+            case "l":
+                username = input("Inserire l'username: ")
+                password = getpass.getpass("Inserire la password: ")
+                loggato = login(username, password)
+            case _:
+                print("Scelta non valida! Riprovare...")
+            
+
+        '''
+        if loggato == True:
+            usernameloggato = username
+            main2(usernameloggato, loggato)
+            valdnd = r.hget("utenti", usernameloggato, "dnd")
+            if valdnd == 1:
+                print("Do Not Disturb attivo")
+            else:
+                print("Do Not Disturb disattivo")
+            '''
+
 
 
 # Funzione per modificare la modalità Do Not Disturb
@@ -133,3 +165,13 @@ while True:
                     print("Scelta non valida. Riprova.")
     else:
         print("Scelta non valida. Riprova.")
+
+
+#Converte la password in un hash per motivi di sicurezza
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+#per entrare nel primo     
+if __name__ == "__main__":
+    main()
