@@ -14,6 +14,20 @@ r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com'
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
+def registrazione2(username, password):
+    if r.hexists(f"utenti:{username}", "nome"):
+        print("Nome Utente già utilizzato. Sceglierne un'altro...")
+        return False
+    
+    password_hash = hash_password(password)
+    
+    r.hset(f"utenti:{username}","nome",username)
+    r.hset(f"utenti:{username}","password",password_hash)
+    r.rpush(f"utenti:{username}","contatti",)
+    r.setbit(f"utenti:{username}","dnd",0,0)
+    
+    return True
+
 #funzione registrazione
 def registrazione(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
@@ -54,15 +68,16 @@ def ricerca_utenti(user):
     
 #funzione lista contatti con creazione della lista vuota
 def contatti_utente(user):
-    lista_contatti_chiave = f"contatti:{user}" #qui creiamo la stringa che rappresenta la chiave "lista_contatti" che inseriremo poi nell'hash dell'user
-    red.hset("dati_utente", "contatti", lista_contatti_chiave) #qui creiamo la  chiave "contatti" nell'hash "dati_utente" con valore "lista_contatti_chiave"
-    lista_contatti = red.lrange(lista_contatti_chiave, 0, -1) #stesso metodo presente nell'aggiungi contatti
-    if not lista_contatti:  # In caso la lista sia vuota
-        print(f"Non hai contatti da visualizzare")
-    else:
+    #qui creiamo la stringa che rappresenta la chiave "lista_contatti" che inseriremo poi nell'hash dell'user
+    lista_contatti = r.hget(f"utenti:{user}", "contatti") #qui creiamo la  chiave "contatti" nell'hash "dati_utente" con valore "lista_contatti_chiave"
+    #lista_contatti = r.lrange(lista, 0, -1) #stesso metodo presente nell'aggiungi contatti
+    
+    if lista_contatti:
         print(f"I tuoi contatti sono:")
         for contatto in lista_contatti:
             print(contatto.decode('utf-8'))
+    else:
+        print(f"Non hai contatti da visualizzare")
     
 # Funzione primo menù
 def main():
@@ -115,7 +130,7 @@ def main2(usernameloggato, loggato):
                 risultati = ricerca_utenti(nome_ricerca)
             
             case "v":
-                pass
+                contatti_utente(usernameloggato)
             
             case "d":
                 valdnd = r.hget("utenti", usernameloggato, "dnd")

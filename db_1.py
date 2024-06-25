@@ -29,7 +29,22 @@ def registrazione(username, password):
 
     r.hmset(f"utenti:{username}", dati_utente)
     return True
-
+"""
+def registrazione2(username, password):
+    if r.hexists(f"utenti:{username}", "nome"):
+        print("Nome Utente già utilizzato. Sceglierne un'altro...")
+        return False
+    
+    password_hash = hash_password(password)
+    
+    r.hset(f"utenti:{username}","nome",username)
+    r.hset(f"utenti:{username}","password",password_hash)
+    r.rpush(f"utenti:{username}:contatti","")
+    r.setbit(f"utenti:{username}:dnd",0,0)
+    
+    return True
+"""
+# FARE CASTING DA LISTA IN STRINGA E VICEVERSA
 # Funzione di login
 def login(username, password):
     if not r.hexists(f"utenti:{username}", "nome"):
@@ -84,7 +99,7 @@ def contatti_utente(user):
 '''
 
 # Funzione primo menù
-def main():
+def main(loggato = False):
     while True:
         scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
         
@@ -94,7 +109,7 @@ def main():
             case "r":
                 username = input("Inserire l'username: ")
                 password = input("Inserire la password: ")
-                registrazione(username, password)
+                registrazione2(username, password)
             case "l":
                 username = input("Inserire l'username: ")
                 password = input("Inserire la password: ")
@@ -127,67 +142,28 @@ def main2(usernameloggato, loggato):
             
             case "t":
                 loggato = False
-                main(loggato) # aggiungere log out
-                
+                break
+              
             case "a":
                 nome_ricerca = input("Inserire l'username da trovare: ")
-                risultati = ricerca_utenti(nome_ricerca)
+                #risultati = ricerca_utenti(nome_ricerca)
             
             case "v":
                 pass
-            
+
             case "d":
-                valdnd = r.hget("utenti", usernameloggato, "dnd")
-                if valdnd == 0:
-                    r.setbit("dnd", 0, 1)
+                valdnd = r.hget(f"utenti:{usernameloggato}", "dnd")
+                print("valdnd", valdnd)
+                if int(valdnd) == 0:
+                    #r.setbit("dnd", 0, 1)
+                    r.hset(f"utenti:{usernameloggato}", "dnd", 1)
                     print("Do Not Disturb attivato")
                 else:
-                    r.setbit("dnd", 0, 0)
+                    #r.setbit("dnd", 0, 0)
+                    r.hset(f"utenti:{usernameloggato}", "dnd", 0)
                     print("Do Not Disturb disattivato")
 
-
             
-                if risultati is True:
-                    pass
-
-'''
-# Funzione per modificare la modalità Do Not Disturb
-
-def DND(user): # User è il nome dell'utente in sessione.
-    scelta1 = input("Vuoi modificare la modalità Do Not Disturb: si / no ").lower()
-    if scelta1 == "si":
-        val = red.hget(f"user:{user}", "DnD")
-        if val == "0":
-            red.hset(f"user:{user}", "DnD", 1)
-            print("Modalità Do Not Disturb attivata.")
-        else:
-            red.hset(f"user:{user}", "DnD", 0)
-            print("Modalità Do Not Disturb disattivata.")
-
-# Esecuzione delle funzioni
-while True:
-    azione = input("Vuoi registrarti o fare il login? (registrazione/login): ").lower()
-    if azione == "registrazione":
-        registrazione()
-    elif azione == "login":
-        nome = login()
-        if nome:
-            while True:
-                scelta = input("Cosa vuoi fare? (DND/aggiungi contatto/logout): ").lower()
-                if scelta == "dnd":
-                    DND(nome)
-                elif scelta == "aggiungi contatto":
-                    contatto = input("Inserisci il nome del contatto da aggiungere: ")
-                    #aggiungi_contatto(nome, contatto)
-                elif scelta == "logout":
-                    print("Logout effettuato.")
-                    break
-                else:
-                    print("Scelta non valida. Riprova.")
-    else:
-        print("Scelta non valida. Riprova.")
-
-'''
 
 #per entrare nel primo     
 if __name__ == "__main__":
