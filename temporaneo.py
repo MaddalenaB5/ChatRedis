@@ -70,12 +70,13 @@ def main():
             loggato = login(username, password)
             if loggato == True:
                 usernameloggato = username
-                main2(usernameloggato, loggato)
-                valdnd = r.hget("utenti", usernameloggato, "dnd")
-                if valdnd == 1:
+                vadnd = r.hget("utenti", usernameloggato, "dnd")
+                if vadnd == 1:
                     print("Do Not Disturb attivo")
                 else:
                     print("Do Not Disturb disattivo")
+                main2(usernameloggato, loggato)
+                
         else:
             print("Scelta non valida! Riprovare...")
 
