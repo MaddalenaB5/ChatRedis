@@ -38,7 +38,6 @@ def login(username, password):
     
     password_salvata = r.hget(f"utenti:{username}", "password")
     if password_salvata == hash_password(password):
-        print("Benvenuto!")
         return True
     else:
         print("Nome utente inesistente o password sbagliata. Riprovare...")
@@ -103,18 +102,53 @@ def main():
             case _:
                 print("Scelta non valida! Riprovare...")
             
-
-        '''
         if loggato == True:
             usernameloggato = username
             main2(usernameloggato, loggato)
+            """
             valdnd = r.hget("utenti", usernameloggato, "dnd")
             if valdnd == 1:
                 print("Do Not Disturb attivo")
             else:
                 print("Do Not Disturb disattivo")
-            '''
+"""
 
+#secondo menù
+def main2(usernameloggato, loggato):
+    while True:
+        scelta = input("""Benvenuto! Vuoi:
+                       - (a)ggiungere un nuovo contatto?
+                       - (v)isualizzare lista contatti?
+                       - (c)hattare con un contatto?
+                       - cambiare lo stato del (d)o not disturb?
+                       - (t) per tornare. """).lower()
+        
+        match scelta:
+            
+            case "t":
+                loggato = False
+                main(loggato) # aggiungere log out
+                
+            case "a":
+                nome_ricerca = input("Inserire l'username da trovare: ")
+                risultati = ricerca_utenti(nome_ricerca)
+            
+            case "v":
+                pass
+            
+            case "d":
+                valdnd = r.hget("utenti", usernameloggato, "dnd")
+                if valdnd == 0:
+                    r.setbit("dnd", 0, 1)
+                    print("Do Not Disturb attivato")
+                else:
+                    r.setbit("dnd", 0, 0)
+                    print("Do Not Disturb disattivato")
+
+
+            
+                if risultati is True:
+                    pass
 
 '''
 # Funzione per modificare la modalità Do Not Disturb

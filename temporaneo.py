@@ -23,11 +23,10 @@ def registrazione(username, password):
     dati_utente = {
         "nome": username,
         "password": password_hash,
-        "contatti": [],
         "dnd" : 0
         }
-    
-    r.hset(f"utenti:{username}", dati_utente)
+
+    r.hmset(f"utenti:{username}", dati_utente)
     return True
 
 #funzione di login
@@ -38,7 +37,6 @@ def login(username, password):
     
     password_salvata = r.hget(f"utenti:{username}", "password")
     if password_salvata == hash_password(password):
-        print("Benvenuto!")
         return True
     else:
         print("Nome utente inesistente o password sbagliata. Riprovare...")
@@ -66,60 +64,72 @@ def contatti_utente(user):
         for contatto in lista_contatti:
             print(contatto.decode('utf-8'))
     
-#primo menù
+# Funzione primo menù
 def main():
     while True:
         scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
         
-        if scelta == "q":
-            break
-        username = input("Inserire l'username: ")
-        password = getpass.getpass("Inserire la password: ")
-        
-        if scelta == "r":
-            registrazione(username, password)
-        elif scelta == "l":
-            loggato = login(username, password)
-            if loggato == True:
-                usernameloggato = username
-                vadnd = r.hget("utenti", usernameloggato, "dnd")
-                if vadnd == 1:
-                    print("Do Not Disturb attivo")
-                else:
-                    print("Do Not Disturb disattivo")
-                main2(usernameloggato, loggato)
-                
-        else:
-            print("Scelta non valida! Riprovare...")
+        match scelta:
+            case "q":
+                break
+            case "r":
+                username = input("Inserire l'username: ")
+                password = input("Inserire la password: ")
+                registrazione(username, password)
+            case "l":
+                username = input("Inserire l'username: ")
+                password = input("Inserire la password: ")
+                loggato = login(username, password)
+            case _:
+                print("Scelta non valida! Riprovare...")
+            
+        if loggato == True:
+            usernameloggato = username
+            main2(usernameloggato, loggato)
+            """
+            valdnd = r.hget("utenti", usernameloggato, "dnd")
+            if valdnd == 1:
+                print("Do Not Disturb attivo")
+            else:
+                print("Do Not Disturb disattivo")
+"""
 
 #secondo menù
 def main2(usernameloggato, loggato):
     while True:
         scelta = input("""Benvenuto! Vuoi:
                        - (a)ggiungere un nuovo contatto?
+                       - (v)isualizzare lista contatti?
                        - (c)hattare con un contatto?
                        - cambiare lo stato del (d)o not disturb?
                        - (t) per tornare. """).lower()
         
-        if scelta == "t":
-            loggato = False
-            main(loggato) # aggiungere log out
-        elif scelta == "a":
-            nome_ricerca = input("Inserire l'username da trovare: ")
-            risultati = ricerca_utenti(nome_ricerca)
-        elif scelta == "d":
-            valdnd = r.hget("utenti", usernameloggato, "dnd")
-            if valdnd == 0:
-                r.setbit("dnd", 0, 1)
-                print("Do Not Disturb attivato")
-            else:
-                r.setbit("dnd", 0, 0)
-                print("Do Not Disturb disattivato")
+        match scelta:
+            
+            case "t":
+                loggato = False
+                main(loggato) # aggiungere log out
+                
+            case "a":
+                nome_ricerca = input("Inserire l'username da trovare: ")
+                risultati = ricerca_utenti(nome_ricerca)
+            
+            case "v":
+                pass
+            
+            case "d":
+                valdnd = r.hget("utenti", usernameloggato, "dnd")
+                if valdnd == 0:
+                    r.setbit("dnd", 0, 1)
+                    print("Do Not Disturb attivato")
+                else:
+                    r.setbit("dnd", 0, 0)
+                    print("Do Not Disturb disattivato")
 
 
             
-            if risultati is True:
-                pass
+                if risultati is True:
+                    pass
             
 #per entrare nel primo     
 if __name__ == "__main__":
