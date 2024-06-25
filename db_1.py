@@ -65,17 +65,32 @@ def login():
         print("Qualcosa è andato storto. Non tornare più!")
         return None
 
+#ricerca utenti anche parziale
+def ricerca_utenti(user):
+    nomi_presenti = r.hkeys("utenti")
+    risultati = []
+    for nome_utente in nomi_presenti:
+        if user.lower() in nome_utente[0:len(user)+1].lower():
+            risultati.append(nome_utente)
+        
+        return risultati
+    
+
 # Funzione per aggiungere nuovi contatti
-def aggiungi_contatto(user, contatto):
-    if red.hget(f"user:{contatto}") is None: # Si controlla l'estistenza del contatto nel db
+def aggconta(user):
+    contparz = input(str("utente che vuoi cercare: "))
+    ricerca_utenti(contparz)
+    contscelto = input(str("quale scegli? "))
+    if red.hget(f"user:{contscelto}") is None: # Si controlla l'estistenza del contatto nel db
         print('Utente non esistente')
     else: #controlla che non sia già presente nella lista contatti
         lista_contatti = red.lrange(f"contatti:{user}", 0, -1)  #restituisce la lista dei contatti
-        if contatto.encode('utf-8') in lista_contatti:
+        if contscelto.encode('utf-8') in lista_contatti:
             print('Contatto già presente')
         else:
-            red.rpush(f"contatti:{user}", contatto) #qui aggiungo a contatti (una lista) dell'utente il contatto che vuole aggiungere
-            print(f"Aggiunto {contatto} alla lista contatti di {user}")
+            red.rpush(f"contatti:{user}", contscelto) #qui aggiungo a contatti (una lista) dell'utente il contatto che vuole aggiungere
+            print(f"Aggiunto {contscelto} alla lista contatti di {user}")
+
 
 #Funzione per visalizzare i contatti
 def contatti_utente(user):
@@ -87,15 +102,7 @@ def contatti_utente(user):
         for contatto in lista_contatti:
             print(contatto.decode('utf-8'))
 
-#Funzione di ricerca utenti parziale
-def ricerca_utente_parziale(utente_parziale):
-    utenti_tutti = red.keys("user:*") #qui si trovano tutti i nomi utenti
-    utenti_trovati = [] #qui si crea una lista con tutti i nomi utenti
-    for i in utenti_tutti: #qui fa la ricerca parziale
-        utente = i.decode('utf-8').split(':')[1] # divide user dal suo valore e restituisce quindi il nome associato
-        if utente_parziale in utente:
-            utenti_trovati.append(utente)
-    return utenti_trovati
+
 
 # Funzione primo menù
 def main():

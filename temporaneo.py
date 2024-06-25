@@ -45,11 +45,11 @@ def login(username, password):
         return False
 
 #funzione ricerca utenti *
-def ricerca_utenti(nome):
+def ricerca_utenti(user):
     nomi_presenti = r.hkeys("utenti")
     risultati = []
     for nome_utente in nomi_presenti:
-        if nome.lower() in nome_utente.lower():
+        if user.lower() in nome_utente[0:len(user)+1].lower():
             risultati.append(nome_utente)
         
         return risultati
@@ -70,12 +70,13 @@ def main():
             loggato = login(username, password)
             if loggato == True:
                 usernameloggato = username
-                main2(usernameloggato, loggato)
-                valdnd = r.hget("utenti", usernameloggato, "dnd")
-                if valdnd == 1:
+                vadnd = r.hget("utenti", usernameloggato, "dnd")
+                if vadnd == 1:
                     print("Do Not Disturb attivo")
                 else:
                     print("Do Not Disturb disattivo")
+                main2(usernameloggato, loggato)
+                
         else:
             print("Scelta non valida! Riprovare...")
 
