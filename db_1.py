@@ -1,5 +1,4 @@
 import redis as red
-import getpass
 import hashlib
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
@@ -25,11 +24,10 @@ def registrazione(username, password):
     dati_utente = {
         "nome": username,
         "password": password_hash,
-        "contatti": [],
         "dnd" : 0
         }
-    
-    r.hset(f"utenti:{username}", dati_utente)
+
+    r.hmset(f"utenti:{username}", dati_utente)
     return True
 
 # Funzione di login
@@ -96,11 +94,11 @@ def main():
                 break
             case "r":
                 username = input("Inserire l'username: ")
-                password = getpass.getpass("Inserire la password: ")
+                password = input("Inserire la password: ")
                 registrazione(username, password)
             case "l":
                 username = input("Inserire l'username: ")
-                password = getpass.getpass("Inserire la password: ")
+                password = input("Inserire la password: ")
                 loggato = login(username, password)
             case _:
                 print("Scelta non valida! Riprovare...")
