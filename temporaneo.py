@@ -45,11 +45,11 @@ def login(username, password):
         return False
 
 #funzione ricerca utenti *
-def ricerca_utenti(nome):
+def ricerca_utenti(user):
     nomi_presenti = r.hkeys("utenti")
     risultati = []
     for nome_utente in nomi_presenti:
-        if nome.lower() in nome_utente[0:len(nome)+1].lower():
+        if user.lower() in nome_utente[0:len(user)+1].lower():
             risultati.append(nome_utente)
         
         return risultati
