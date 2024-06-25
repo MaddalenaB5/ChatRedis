@@ -113,3 +113,31 @@ def main2(usernameloggato, loggato):
 if __name__ == "__main__":
     main()
 
+
+
+'''
+import time
+#funzione messaggi (in caso non esista chat)
+def creazione_chat(username1, username2):
+    nome_chat = str(username1)+ " - " + str(username2)
+    inv_nome_chat = str(username2)+ " - " + str(username1)
+
+    # controllo esistenza chat 
+    if r.hexists(f"messaggi:{chat}", nome_chat) or r.hexists(f"messaggi:{chat}", inv_nome_chat):
+        print("Nome Utente già utilizzato. Sceglierne un'altro...")
+        return False
+
+    # scrivere messaggio e salvare tempo
+    messaggio = str(input("Scrivi il messaggio: "))
+    t=time.time()
+
+    # creazione chat
+    dati_chat = {
+        "nome": nome_chat,
+        "num_mess": 0
+        }
+    
+    r.hset(f"messaggi:{nome_chat}", dati_chat)
+    r.zadd(f"messaggi: storico"), {messaggio: t}  # spero funzioni sono andato un po' a caso
+    return True
+'''
