@@ -49,7 +49,7 @@ def ricerca_utenti(nome):
     nomi_presenti = r.hkeys("utenti")
     risultati = []
     for nome_utente in nomi_presenti:
-        if nome.lower() in nome_utente.lower():
+        if nome.lower() in nome_utente[0:len(nome)+1].lower():
             risultati.append(nome_utente)
         
         return risultati
