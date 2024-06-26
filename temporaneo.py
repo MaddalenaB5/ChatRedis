@@ -14,6 +14,7 @@ r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com'
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
+#QUELLA DA UTILLIZARE
 def registrazione2(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
         print("Nome Utente già utilizzato. Sceglierne un'altro...")
@@ -28,6 +29,8 @@ def registrazione2(username, password):
     
     return True
 
+#NON UTILIZZARE
+'''
 #funzione registrazione
 def registrazione(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
@@ -42,6 +45,7 @@ def registrazione(username, password):
 
     r.hmset(f"utenti:{username}", dati_utente)
     return True
+'''
 
 #funzione di login
 def login(username, password):
@@ -57,28 +61,32 @@ def login(username, password):
         return False
 
 #funzione ricerca utenti *
-def ricerca_utenti(user):
-    nomi_presenti = r.hkeys("utenti")
+def ricerca_utenti(nome):
+    cursor = '0'
     risultati = []
-    for nome_utente in nomi_presenti:
-        if user.lower() in nome_utente[0:len(user)+1].lower():
-            risultati.append(nome_utente)
-        
-        return risultati
-    
+    while cursor != 0:
+        cursor, keys = r.scan(cursor=cursor, match = f'utenti:{nome}*')
+        for key in keys:
+            if r.type(key) == b'hash':
+                value = r.hget(key, nome)
+                if value is not None:
+                    value_decoded = value.decode('utf-8')
+                    if nome in value_decoded:
+                        risultati.append(value_decoded)
+    return risultati
+
 #funzione lista contatti con creazione della lista vuota
-def contatti_utente(user):
-    #qui creiamo la stringa che rappresenta la chiave "lista_contatti" che inseriremo poi nell'hash dell'user
-    lista_contatti = r.hget(f"utenti:{user}", "contatti") #qui creiamo la  chiave "contatti" nell'hash "dati_utente" con valore "lista_contatti_chiave"
-    #lista_contatti = r.lrange(lista, 0, -1) #stesso metodo presente nell'aggiungi contatti
-    
-    if lista_contatti:
-        print(f"I tuoi contatti sono:")
-        for contatto in lista_contatti:
-            print(contatto.decode('utf-8'))
-    else:
-        print(f"Non hai contatti da visualizzare")
-    
+def contatti_utente(risultati, username):
+    utentedaagg = print(str("quale scegli?: "))
+    contatti = r.lrange("contatti", 0, -1)
+    for el in risultati:
+        if utentedaagg not in contatti and el == utentedaagg:
+            r.rpush(f"utenti:{username}:contatti", utentedaagg)
+            print("i tuoi contatti sono: \n", contatti)
+        else:
+            print("errore")
+            break
+
 # Funzione primo menù
 def main():
     while True:
@@ -127,7 +135,8 @@ def main2(usernameloggato, loggato):
                 
             case "a":
                 nome_ricerca = input("Inserire l'username da trovare: ")
-                risultati = ricerca_utenti(nome_ricerca)
+                risultati = ricerca_utenti(nome_ricerca, usernameloggato)
+                contatti_utente(risultati, usernameloggato)
             
             case "v":
                 contatti_utente(usernameloggato)

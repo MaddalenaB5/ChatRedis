@@ -14,6 +14,7 @@ print('Connesso')
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
+'''
 #prova da controllare (mi piace di più)
 # Funzione di registrazione
 def registrazione(username, password):
@@ -29,7 +30,7 @@ def registrazione(username, password):
 
     r.hmset(f"utenti:{username}", dati_utente)
     return True
-"""
+'''
 def registrazione2(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
         print("Nome Utente già utilizzato. Sceglierne un'altro...")
@@ -38,12 +39,12 @@ def registrazione2(username, password):
     password_hash = hash_password(password)
     
     r.hset(f"utenti:{username}","nome",username)
-    r.hset(f"utenti:{username}","password",password_hash)
-    r.rpush(f"utenti:{username}:contatti","")
-    r.setbit(f"utenti:{username}:dnd",0,0)
-    
+    r.hset(f"utenti:{username}","password",password_hash) 
+    r.lpush(f"utenti:{username}:contatti", "trovati:")
+    r.setbit(f"utenti:{username}:dnd", 0,0)
+
     return True
-"""
+
 # FARE CASTING DA LISTA IN STRINGA E VICEVERSA
 # Funzione di login
 def login(username, password):
@@ -58,45 +59,34 @@ def login(username, password):
         print("Nome utente inesistente o password sbagliata. Riprovare...")
         return False
 
-'''
+
 #ricerca utenti anche parziale
-def ricerca_utenti(user):
-    nomi_presenti = r.hkeys("utenti")
+def ricerca_utenti(nome):
+    cursor = 0
     risultati = []
-    for nome_utente in nomi_presenti:
-        if user.lower() in nome_utente[0:len(user)+1].lower():
-            risultati.append(nome_utente)
-        
-        return risultati
+    while cursor == 0:
+        cursor, keys = r.scan(cursor=cursor, match = f'utenti:{nome}*')
+        for key in keys:
+            if r.type(key) == b'hash':
+                value = r.hget(key, nome)
+                if value is not None:
+                    value_decoded = value.decode('utf-8')
+                    if nome in value_decoded:
+                        risultati.append(value_decoded)
+    return risultati
 
 
 # Funzione per aggiungere nuovi contatti
-def aggconta(user):
-    contparz = input(str("utente che vuoi cercare: "))
-    ricerca_utenti(contparz)
-    contscelto = input(str("quale scegli? "))
-    if red.hget(f"user:{contscelto}") is None: # Si controlla l'estistenza del contatto nel db
-        print('Utente non esistente')
-    else: #controlla che non sia già presente nella lista contatti
-        lista_contatti = red.lrange(f"contatti:{user}", 0, -1)  #restituisce la lista dei contatti
-        if contscelto.encode('utf-8') in lista_contatti:
-            print('Contatto già presente')
+def aggiuntacont(risultati, username):
+    utentedaagg = print(str("quale scegli?: "))
+    contatti = r.lrange("contatti", 0, -1)
+    for el in risultati:
+        if utentedaagg not in contatti and el == utentedaagg:
+            r.rpush(f"utenti:{username}:contatti", utentedaagg)
+            print("i tuoi contatti sono: \n", contatti)
         else:
-            red.rpush(f"contatti:{user}", contscelto) #qui aggiungo a contatti (una lista) dell'utente il contatto che vuole aggiungere
-            print(f"Aggiunto {contscelto} alla lista contatti di {user}")
-
-
-#Funzione per visalizzare i contatti
-def contatti_utente(user):
-    lista_contatti = red.lrange(f"contatti:{user}", 0, -1) #stesso metodo presente nell'aggiungi contatti
-    if not lista_contatti:  # In caso la lista sia vuota
-        print(f"Non hai contatti da visualizzare")
-    else:
-        print(f"I tuoi contatti sono:")
-        for contatto in lista_contatti:
-            print(contatto.decode('utf-8'))
-
-'''
+            print("errore")
+            break
 
 # Funzione primo menù
 def main(loggato = False):
@@ -120,13 +110,12 @@ def main(loggato = False):
         if loggato == True:
             usernameloggato = username
             main2(usernameloggato, loggato)
-            """
-            valdnd = r.hget("utenti", usernameloggato, "dnd")
+
+            valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0)
             if valdnd == 1:
                 print("Do Not Disturb attivo")
             else:
                 print("Do Not Disturb disattivo")
-"""
 
 #secondo menù
 def main2(usernameloggato, loggato):
@@ -145,22 +134,20 @@ def main2(usernameloggato, loggato):
                 break
               
             case "a":
-                nome_ricerca = input("Inserire l'username da trovare: ")
-                #risultati = ricerca_utenti(nome_ricerca)
+                nome_ricerca = input(str("Inserire l'username da trovare: "))
+                risultati = ricerca_utenti(nome_ricerca)
+                print("risultati", risultati)
             
             case "v":
                 pass
 
             case "d":
-                valdnd = r.hget(f"utenti:{usernameloggato}", "dnd")
-                print("valdnd", valdnd)
-                if int(valdnd) == 0:
-                    #r.setbit("dnd", 0, 1)
-                    r.hset(f"utenti:{usernameloggato}", "dnd", 1)
+                valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0)
+                if valdnd == 0:
+                    r.setbit(f"utenti:{usernameloggato}:dnd",0, 1)
                     print("Do Not Disturb attivato")
                 else:
-                    #r.setbit("dnd", 0, 0)
-                    r.hset(f"utenti:{usernameloggato}", "dnd", 0)
+                    r.setbit(f"utenti:{usernameloggato}:dnd",0, 0)
                     print("Do Not Disturb disattivato")
 
             
