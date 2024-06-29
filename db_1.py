@@ -86,13 +86,14 @@ def ricerca_utenti(username):
 def ricerca_utenti(username_loggato, nome_ricerca):
 
   risultati = []
-  pattern = f"utenti:{nome_ricerca}*"
+  #pattern = f"utenti:{nome_ricerca}*"
 
   # Scansione di tutti gli hash utente
   for key in r.scan(match="utenti:*", type="hash"):
-    #pattern = "utenti:" + nome_ricerca
-    if key != f"utenti:{username_loggato}" and pattern in key:  # Ignora la chiave dell'utente loggato
-        continue
+    pattern = "utenti:" + nome_ricerca
+    if key == f"utenti:{username_loggato}": # Ignora la chiave dell'utente loggato
+        if pattern in key: #QUESTO IF DA PROBLEMI DI TYPE INT ??
+            continue     
     else:
         risultati.append(r.hget(key, "nome"))
 
@@ -100,11 +101,11 @@ def ricerca_utenti(username_loggato, nome_ricerca):
 
 # Funzione per aggiungere nuovi contatti
 def aggiungi_contatti(username, ris):
-
+    print(ris) #da una lista vuota
     for i, contatto in enumerate(ris, start = 1):
             print(f"{i}. {contatto}")
 
-    utentedaagg = input(int("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+    utentedaagg = int(input("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
     contatto_selezionato = ris[utentedaagg - 1]
     if contatto_selezionato in contatti:
@@ -169,7 +170,7 @@ def main2(usernameloggato, loggato):
                 break
               
             case "a":
-                nome_ricerca = input(str("Inserire l'username da trovare: "))
+                nome_ricerca = str(input("Inserire l'username da trovare: "))
                 risultati = ricerca_utenti(usernameloggato, nome_ricerca)
                 aggiungi_contatti(usernameloggato, risultati)
             
