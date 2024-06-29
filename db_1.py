@@ -16,7 +16,7 @@ def hash_password(password):
 
 
 # Funzione che gestisce la registrazione dell'utente
-def registrazione2(username, password):
+def registrazione(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
         print("Nome Utente già utilizzato. Sceglierne un altro...")
         return False
@@ -79,26 +79,44 @@ def ricerca_utenti(username):
             break
 
     return ris
+ 
  '''   
 
-# Funzione per aggiungere nuovi contatti
-def aggiuntacont(risultati, username):
-    utentedaagg = print(str("quale scegli?: "))
-    contatti = r.lrange("contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
-    for el in risultati:
-        if utentedaagg not in contatti and el == utentedaagg:
-            r.rpush(f"utenti:{username}:contatti", utentedaagg) #comando che aggiunge l'elemento nella lista
-            print("i tuoi contatti sono: \n", contatti)
-        else:
-            print("errore")
-            break
+# funzione ricerca utenti
+def ricerca_utenti(username_loggato, nome_ricerca):
 
-# Funzione per la visualizzazione della lista dei contetti
+  risultati = []
+
+  # Scansione di tutti gli hash utente
+  for key in r.scan(match="utenti:*", type="hash"):
+    pattern = "utenti:" + nome_ricerca
+    if key == f"utenti:{username_loggato}" | pattern not in key:  # Ignora la chiave dell'utente loggato
+        continue
+    else:
+        risultati.append(r.hget(key, "nome"))
+
+  return risultati
+
+# Funzione per aggiungere nuovi contatti
+def aggiungi_contatti(username, ris):
+
+    for i, contatto in enumerate(ris, start = 1):
+            print(f"{i}. {contatto}")
+
+    utentedaagg = print(int("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+    contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
+    for el in ris:
+        r.rpush(f"utenti:{username}:contatti", utentedaagg) #comando che aggiunge l'elemento nella lista
+        print("i tuoi contatti sono: \n", contatti)
+       #sistemare senza inserimento parziale già fatto sopra
+       # mettere la condizione per il quale il contatto non sia già presente nella lista contatti 
+
+# Funzione per la visualizzazione della lista dei contatti
 def vis_contatti(username):
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
     if contatti:
-        for contatto in contatti:
-            print(contatto)
+        for i, contatto in enumerate(contatti[1:], start = 1):
+            print(f"{i + 1}. {contatto}")
 
 # Prima parte del menù, gestisce registrazione, login e DnD
 def main(loggato = False):
@@ -111,7 +129,7 @@ def main(loggato = False):
             case "r":
                 username = input("Inserire l'username: ")
                 password = input("Inserire la password: ")
-                registrazione2(username, password)
+                registrazione(username, password)
             case "l":
                 username = input("Inserire l'username: ")
                 password = input("Inserire la password: ")
@@ -121,13 +139,14 @@ def main(loggato = False):
             
         if loggato == True:
             usernameloggato = username
-            main2(usernameloggato, loggato)
 
             valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0)  # comando che estrae il bitmap DnD associato all'utente loggato
             if valdnd == 1:
                 print("Do Not Disturb attivo")
             else:
                 print("Do Not Disturb disattivo")
+
+            main2(usernameloggato, loggato)
 
 # Seconda parte del menù, gestisce tutte le altre azioni
 def main2(usernameloggato, loggato):
@@ -147,8 +166,8 @@ def main2(usernameloggato, loggato):
               
             case "a":
                 nome_ricerca = input(str("Inserire l'username da trovare: "))
-                risultati = ricerca_utenti(nome_ricerca)
-                print("risultati", risultati)
+                risultati = ricerca_utenti(usernameloggato, nome_ricerca)
+                aggiungi_contatti(usernameloggato, risultati)
             
             case "v":
                 valori = vis_contatti(usernameloggato)
