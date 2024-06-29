@@ -86,11 +86,12 @@ def ricerca_utenti(username):
 def ricerca_utenti(username_loggato, nome_ricerca):
 
   risultati = []
+  pattern = f"utenti:{nome_ricerca}*"
 
   # Scansione di tutti gli hash utente
   for key in r.scan(match="utenti:*", type="hash"):
-    pattern = "utenti:" + nome_ricerca
-    if key == f"utenti:{username_loggato}" | pattern not in key:  # Ignora la chiave dell'utente loggato
+    #pattern = "utenti:" + nome_ricerca
+    if key != f"utenti:{username_loggato}" and pattern in key:  # Ignora la chiave dell'utente loggato
         continue
     else:
         risultati.append(r.hget(key, "nome"))
@@ -103,9 +104,12 @@ def aggiungi_contatti(username, ris):
     for i, contatto in enumerate(ris, start = 1):
             print(f"{i}. {contatto}")
 
-    utentedaagg = print(int("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+    utentedaagg = input(int("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
-    for el in ris:
+    contatto_selezionato = ris[utentedaagg - 1]
+    if contatto_selezionato in contatti:
+        print('Contatto già presente')
+    else:
         r.rpush(f"utenti:{username}:contatti", utentedaagg) #comando che aggiunge l'elemento nella lista
         print("i tuoi contatti sono: \n", contatti)
        #sistemare senza inserimento parziale già fatto sopra
