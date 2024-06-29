@@ -1,6 +1,7 @@
 import redis
 import hashlib
 import getpass
+import time
 
 #Connetti al server Redis cloud del tuo collega con autenticazione
 r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
@@ -147,6 +148,11 @@ def main2(usernameloggato, loggato):
             case "v":
                 pass
 
+            case "c":
+                #get lista redisutente2
+                #chat(usernameloggato, user2)
+                pass                
+                
             case "d":
                 valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0)
                 if valdnd == 0:
@@ -156,34 +162,31 @@ def main2(usernameloggato, loggato):
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 0)
                     print("Do Not Disturb disattivato")
 
-#   ENTRATA PRIMO MENU     
-if __name__ == "__main__":
-    main()
 
 #   FUNZIONE MESSAGGISTICA
-'''
-import time
-#funzione messaggi (in caso non esista chat)
-def creazione_chat(username1, username2):
+
+#funzione messaggi
+def chat(username1, username2):
     nome_chat = str(username1)+ " - " + str(username2)
     inv_nome_chat = str(username2)+ " - " + str(username1)
 
-    # controllo esistenza chat 
-    if r.hexists(f"messaggi:{chat}", nome_chat) or r.hexists(f"messaggi:{chat}", inv_nome_chat):
-        print("Nome Utente già utilizzato. Sceglierne un'altro...")
-        return False
+    mostrare_chat(nome_chat)
 
-    # scrivere messaggio e salvare tempo
-    messaggio = str(input("Scrivi il messaggio: "))
-    t=time.time()
-
-    # creazione chat
-    dati_chat = {
-        "nome": nome_chat,
-        "num_mess": 0
-        }
+    # scrittura messaggio e tempo
+    messaggio = str(input("> "))
+    t = time.time()
     
-    r.hset(f"messaggi:{nome_chat}", dati_chat)
-    r.zadd(f"messaggi: storico"), {messaggio: t}  # spero funzioni sono andato un po' a caso
-    return True
-'''
+    # aggiungo messaggio al sorted set
+    r.zadd(f"chat:{nome_chat}", {f"> {messaggio}": t})
+    r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio}": t})
+    
+
+def mostrare_chat(nome_chat):
+    if r.exists(f"chat:{nome_chat}"):
+        return print(r.zrange(f"chat:{nome_chat}", 0, -1, withscores=True))
+    else:
+        return print("Non fare l'asociale e manda il primo messaggio!\n")
+
+#   ENTRATA PRIMO MENU     
+if __name__ == "__main__":
+    main()
