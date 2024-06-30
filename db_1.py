@@ -106,21 +106,36 @@ def vis_contatti(username, chattare = False, storico = False):
 # Prima parte del menù, gestisce registrazione, login e DnD
 def main(loggato = False):
     while True:
-        scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
+        print("""
+          Benvenuto in ChatRedis!
+
+          - Registrazione: (r)
+          - Login: (l)
+          - Uscire: (q)
+        """)
+
+        scelta = input("\nInserisci la tua scelta (r, l, q): ").lower()
         
         match scelta:
             
             case "q":
-                break
+                print("Arrivederci!")
+                exit()
             
             case "r":
-                username = input("Inserire l'username: ").lower()
-                password = input("Inserire la password: ")
-                registrazione(username, password)
+                flag = str(input("Sei sicuro che vuoi registrarti? [y/n]")).lower()
+                if flag == "y":
+                    username = input("\n Inserire l'username: ").lower()
+                    password = input(" Inserire la password: ")
+
+                    if registrazione(username, password):
+                        print("Registrazione avvenuta con successo!")
+                    else:
+                        print("Registrazione fallita. Riprova.")
                 
             case "l":
-                username = input("Inserire l'username: ").lower()
-                password = input("Inserire la password: ")
+                username = input("\n Inserire l'username: ").lower()
+                password = input(" Inserire la password: ")
                 loggato = login(username, password)
                 
             case _:

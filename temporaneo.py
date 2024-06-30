@@ -15,36 +15,6 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-# Funzione che gestisce la registrazione dell'utente
-def registrazione(username, password):
-    if r.hexists(f"utenti:{username}", "nome"):
-        print("Nome Utente già utilizzato. Sceglierne un altro...")
-        return False
-    
-    password_hash = hash_password(password)
-    
-    # Creazione hash con nome utente e password, lista dei contatti inizializzata con un solo elemento, bitmap per il DnD
-    r.hset(f"utenti:{username}","nome",username)
-    r.hset(f"utenti:{username}","password",password_hash) 
-    r.lpush(f"utenti:{username}:contatti", "trovati:")
-    r.setbit(f"utenti:{username}:dnd", 0,0)
-
-    return True
-
-
-# Funzione per il login dell'utente
-def login(username, password):
-    if not r.hexists(f"utenti:{username}", "nome"): #controlla l'esistenza dell'hash associato all'utente
-        print("Nome utente inesistente o password sbagliata. Riprovare...")
-        return False
-    
-    password_salvata = r.hget(f"utenti:{username}", "password") #get della password contenuta nell'hash associato all'utente
-    if password_salvata == hash_password(password):
-        return True
-    else:
-        print("Nome utente inesistente o password sbagliata. Riprovare...")
-        return False
-
 
 # funzione ricerca utenti
 def ricerca_utenti(nome):
@@ -102,40 +72,46 @@ def vis_contatti(username, chattare = False, storico = False):
     else:
         print("La lista è vuota, lol.")
 
+def registra_utente():
+ 
+    username = input("\nInserisci username: ").lower()
+    password = input("Inserisci password: ")
 
-# Prima parte del menù, gestisce registrazione, login e DnD
-def main(loggato = False):
-    while True:
-        scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
-        
-        match scelta:
-            
-            case "q":
-                break
-            
-            case "r":
-                username = input("Inserire l'username: ").lower()
-                password = input("Inserire la password: ")
-                registrazione(username, password)
-                
-            case "l":
-                username = input("Inserire l'username: ").lower()
-                password = input("Inserire la password: ")
-                loggato = login(username, password)
-                
-            case _:
-                print("Scelta non valida! Riprovare...")
-            
-        if loggato == True:
-            usernameloggato = username
+    # Controlla se l'username è già esistente
+    if r.hexists(f"utenti:{username}", "nome"):
+        print("Nome Utente già utilizzato. Sceglierne un altro...")
+        return False
 
-            valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0)  # comando che estrae il bitmap DnD associato all'utente loggato
-            if valdnd == 1:
-                print("Do Not Disturb attivo")
-            else:
-                print("Do Not Disturb disattivo")
+    # Crea l'hash della password
+    password_hash = hash_password(password)
 
-            main2(usernameloggato, loggato)
+    # Crea l'utente nel database Redis
+    r.hset(f"utenti:{username}", "nome", username)
+    r.hset(f"utenti:{username}", "password", password_hash)
+    r.lpush(f"utenti:{username}:contatti", "trovati:")  # Inizializza la lista contatti
+    r.setbit(f"utenti:{username}:dnd", 0, 0)  # Imposta Do Not Disturb su disattivato
+
+    return True
+
+def effettua_login():
+  
+    username = input("\nInserisci username: ").lower()
+    password = input("Inserisci password: ")
+
+    # Controlla se l'utente esiste
+    if not r.hexists(f"utenti:{username}", "nome"):
+        print("Nome utente inesistente o password errata. Riprova.")
+        return False
+
+    # Recupera la password salvata
+    password_salvata = r.hget(f"utenti:{username}", "password")
+
+    # Verifica la password
+    if password_salvata == hash_password(password):
+        return True
+    else:
+        print("Nome utente inesistente o password errata. Riprova.")
+        return False
 
 # Seconda parte del menù, gestisce tutte le altre azioni
 def main2(usernameloggato, loggato):
@@ -226,10 +202,6 @@ def mostrare_chat(nome_chat, username2):
     else:
         return print("Non fare l'asociale e manda il primo messaggio!\n")          
     
-
-#per entrare nel primo     
-if __name__ == "__main__":
-    main()
     
 """
 GRAFICO:
@@ -238,3 +210,48 @@ GRAFICO:
 OPZIONALI
 2: notifiche (PUBSUB)
 """
+
+def main():
+
+    while True:
+        stampa_menu()
+
+        scelta = input("\nInserisci la tua scelta (r, l, q): ").lower()
+
+        gestisci_scelta(scelta)
+
+def stampa_menu():
+
+    print("""
+          Benvenuto in ChatRedis!
+
+          - Registrazione: (r)
+          - Login: (l)
+          - Uscire: (q)
+        """)
+
+def gestisci_scelta(scelta):
+  
+    match scelta:
+        case "q":
+            print("Arrivederci!")
+            exit()
+
+        case "r":
+            if registra_utente():
+                print("Registrazione avvenuta con successo!")
+            else:
+                print("Registrazione fallita. Riprova.")
+
+        case "l":
+                username = input("\n Inserire l'username: ").lower()
+                password = input(" Inserire la password: ")
+                loggato = effettua_login(username, password)
+
+        case _:
+            print("Scelta non valida! Riprova...")
+
+
+# Punto di partenza del programma
+if __name__ == "__main__":
+    main()
