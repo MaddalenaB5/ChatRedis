@@ -1,5 +1,6 @@
 import redis as red
 import hashlib
+import time
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
 r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
@@ -45,42 +46,6 @@ def login(username, password):
         print("Nome utente inesistente o password sbagliata. Riprovare...")
         return False
 
-'''
-# Ricerca utenti anche parziale
-def ricerca_utenti(nome):
-    cursor = 0
-    risultati = []
-    while cursor == 0:
-        cursor, keys = r.scan(cursor=cursor, match = f'utenti:{nome}*')  #scan di tutte le chiavi del db
-        for key in keys:
-            if r.type(key) == b'hash':
-                value = r.hget(key, nome)
-                if value is not None:
-                    value_decoded = value.decode('utf-8')
-                    if nome in value_decoded:
-                        risultati.append(value_decoded)
-    return risultati
-'''
-
-'''
-# Ricerca utenti 2
-def ricerca_utenti(username):
-    cursor = '0'
-    ris = []
-    while True:  # Il ciclo dovrebbe continuare finché la scansione non è completata
-        cursor, keys = r.scan(cursor=cursor, match=f'utenti:{username}*')  # Scansiona tutte le chiavi del dbl
-        for key in keys:
-            value = r.hget(key, "nome")  # Ottiene il valore del campo "nome" dell'hash
-            if value is not None:
-                value_decoded = value.decode('utf-8')
-                if username in value_decoded:
-                    ris.append(value_decoded)
-        if cursor == 0:  # Se il cursore è '0', la scansione è completata
-            break
-
-    return ris
- 
- '''   
 
 # funzione ricerca utenti
 def ricerca_utenti(username_loggato, nome_ricerca):
@@ -91,37 +56,56 @@ def ricerca_utenti(username_loggato, nome_ricerca):
   # Scansione di tutti gli hash utente
   for key in r.scan(match="utenti:*", type="hash"):
     pattern = "utenti:" + nome_ricerca
-    if key == f"utenti:{username_loggato}": # Ignora la chiave dell'utente loggato
-        if pattern in key: #QUESTO IF DA PROBLEMI DI TYPE INT ??
-            continue     
+    
+    if key == f"utenti:{username_loggato}" or pattern not in key:
+        continue
+    
     else:
         risultati.append(r.hget(key, "nome"))
 
   return risultati
 
+
 # Funzione per aggiungere nuovi contatti
 def aggiungi_contatti(username, ris):
-    print(ris) #da una lista vuota
-    for i, contatto in enumerate(ris, start = 1):
-            print(f"{i}. {contatto}")
-
-    utentedaagg = int(input("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
-    contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
-    contatto_selezionato = ris[utentedaagg - 1]
-    if contatto_selezionato in contatti:
-        print('Contatto già presente')
+    
+    if ris:
+        
+        for i, contatto in enumerate(ris, start = 1):
+                print(f"{i}. {contatto}")
+    
+        utentedaagg = int(input("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+        contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
+        contatto_selezionato = ris[utentedaagg - 1]
+        if contatto_selezionato in contatti:
+            print('Contatto già presente')
+        else:
+            contatti.append(utentedaagg)
+            r.rpush(f"utenti:{username}:contatti", utentedaagg) #comando che aggiunge l'elemento nella lista
+            print("i tuoi contatti sono: \n", contatti)
+           #sistemare senza inserimento parziale già fatto sopra
+           # mettere la condizione per il quale il contatto non sia già presente nella lista contatti
+    
     else:
-        r.rpush(f"utenti:{username}:contatti", utentedaagg) #comando che aggiunge l'elemento nella lista
-        print("i tuoi contatti sono: \n", contatti)
-       #sistemare senza inserimento parziale già fatto sopra
-       # mettere la condizione per il quale il contatto non sia già presente nella lista contatti 
+        print("La ricerca non è andata a buon fine, impossibile aggiungere contatti.")
+
+
 
 # Funzione per la visualizzazione della lista dei contatti
-def vis_contatti(username):
+def vis_contatti(username, chattare = False):
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
-    if contatti:
+    if contatti[1:]:
         for i, contatto in enumerate(contatti[1:], start = 1):
             print(f"{i + 1}. {contatto}")
+    
+        if chattare:
+            prova = int(input("Digita il numero del contatto con cui vuoi chattare: "))
+            user2 = contatti[prova - 1]
+            return user2
+    
+    else:
+        print("La lista è vuota, lol.")
+
 
 # Prima parte del menù, gestisce registrazione, login e DnD
 def main(loggato = False):
@@ -129,16 +113,20 @@ def main(loggato = False):
         scelta = input("Vuoi (r)egistrati oppure effettuare il (l)ogin? (q) per uscire ").lower()
         
         match scelta:
+            
             case "q":
                 break
+            
             case "r":
-                username = input("Inserire l'username: ")
+                username = input("Inserire l'username: ").lower()
                 password = input("Inserire la password: ")
                 registrazione(username, password)
+                
             case "l":
-                username = input("Inserire l'username: ")
+                username = input("Inserire l'username: ").lower()
                 password = input("Inserire la password: ")
                 loggato = login(username, password)
+                
             case _:
                 print("Scelta non valida! Riprovare...")
             
@@ -170,13 +158,12 @@ def main2(usernameloggato, loggato):
                 break
               
             case "a":
-                nome_ricerca = str(input("Inserire l'username da trovare: "))
+                nome_ricerca = str(input("Inserire l'username da trovare: ")).lower()
                 risultati = ricerca_utenti(usernameloggato, nome_ricerca)
                 aggiungi_contatti(usernameloggato, risultati)
             
             case "v":
-                valori = vis_contatti(usernameloggato)
-                print(valori)
+                vis_contatti(usernameloggato)
                 
             case "d":
                 valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0) # estrazione del bitmap DnD associato all'utente loggato
@@ -186,8 +173,44 @@ def main2(usernameloggato, loggato):
                 else:
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 0) # modifica del valore in "disattivato"
                     print("Do Not Disturb disattivato")
+            case "c":
+                user2 = vis_contatti(usernameloggato, True)
+                chat(usernameloggato, user2)
+            case _:
+                print("Scelta non valida! Riprovare...")
 
-            
+#   FUNZIONE MESSAGGISTICA
+
+#funzione messaggi
+def chat(username1, username2):
+    nome_chat = username1 + " - " + username2
+    inv_nome_chat = username2 + " - " + username1
+
+    mostrare_chat(nome_chat, username2)
+
+    # scrittura messaggio e tempo
+    valdnd = r.getbit(f"utenti:{username2}:dnd", 0)
+    
+    if valdnd == 1:
+        print("L'utente non vuole essere disturbato.")
+        
+    else:
+        print("L'utente può essere disturbato \n")
+        
+        messaggio = str(input("> "))
+        t = time.time()
+        # aggiungo messaggio al sorted set
+        r.zadd(f"chat:{nome_chat}", {f"> {messaggio}": t})
+        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio}": t})
+    
+
+
+def mostrare_chat(nome_chat, username2):
+    print(f">> Chat con {username2} <<\n")
+    if r.exists(f"chat:{nome_chat}"):
+        return print(r.zrange(f"chat:{nome_chat}", 0, -1, withscores=True))
+    else:
+        return print("Non fare l'asociale e manda il primo messaggio!\n")            
 
 #per entrare nel primo     
 if __name__ == "__main__":

@@ -167,21 +167,29 @@ def main2(usernameloggato, loggato):
 
 #funzione messaggi
 def chat(username1, username2):
-    nome_chat = str(username1)+ " - " + str(username2)
-    inv_nome_chat = str(username2)+ " - " + str(username1)
+    nome_chat = username1 + " - " + username2
+    inv_nome_chat = username2 + " - " + username1
 
-    mostrare_chat(nome_chat)
+    mostrare_chat(nome_chat, username2)
 
     # scrittura messaggio e tempo
-    messaggio = str(input("> "))
-    t = time.time()
+    valdnd = r.getbit(f"utenti:{username2}:dnd", 0)
     
-    # aggiungo messaggio al sorted set
-    r.zadd(f"chat:{nome_chat}", {f"> {messaggio}": t})
-    r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio}": t})
+    if valdnd == 1:
+        print("L'utente non vuole essere disturbato.")
+        # input del messaggio
+    else:
+        print("L'utente può essere disturbato \n")
+        
+        messaggio = str(input("> "))
+        t = time.time()
+        # aggiungo messaggio al sorted set
+        r.zadd(f"chat:{nome_chat}", {f"> {messaggio}": t})
+        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio}": t})
     
 
-def mostrare_chat(nome_chat):
+def mostrare_chat(nome_chat, username2):
+    print(f">> Chat con {username2} <<\n")
     if r.exists(f"chat:{nome_chat}"):
         return print(r.zrange(f"chat:{nome_chat}", 0, -1, withscores=True))
     else:
