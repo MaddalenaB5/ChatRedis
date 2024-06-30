@@ -1,5 +1,6 @@
 import redis as red
 import hashlib
+import datetime
 import time
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
@@ -179,6 +180,8 @@ def main2(usernameloggato, loggato):
 #   FUNZIONE MESSAGGISTICA
 
 #funzione messaggi
+import datetime
+
 def chat(username1, username2):
     nome_chat = username1 + " - " + username2
     inv_nome_chat = username2 + " - " + username1
@@ -195,17 +198,19 @@ def chat(username1, username2):
         print("L'utente può essere disturbato \n")
         
         messaggio = str(input("> "))
-        t = time.time()
+        now = datetime.datetime.now()
+        timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+        score = now.timestamp()
+        
         # aggiungo messaggio al sorted set
-        r.zadd(f"chat:{nome_chat}", {f"> {messaggio}": t})
-        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio}": t})
+        r.zadd(f"chat:{nome_chat}", {f"> {messaggio} ({timestamp})": score})
+        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio} ({timestamp})": score})
     
-
-
 def mostrare_chat(nome_chat, username2):
     print(f">> Chat con {username2} <<\n")
     if r.exists(f"chat:{nome_chat}"):
-        return print(r.zrange(f"chat:{nome_chat}", 0, -1, withscores=True))
+        for el in r.zrange(f"chat:{nome_chat}", 0, -1, withscores=False):
+            print(el)
     else:
         return print("Non fare l'asociale e manda il primo messaggio!\n")            
 
