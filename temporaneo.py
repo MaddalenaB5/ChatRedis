@@ -44,19 +44,22 @@ def login(username, password):
         return False
 
 #   FUNZIONE RICERCA UTENTE
-def ricerca_utenti(nome):
-    cursor = 0
-    risultati = []
-    while True:
-        cursor, keys = r.scan(cursor=cursor, match=f'utenti:{nome}*')
-        for key in keys:
-            if r.type(key) == 'hash':
-                value = r.hget(key, "nome")
-                if value is not None and nome in value:
-                    risultati.append(value)
-        if cursor == 0:
-            break
-    return risultati
+def ricerca_utenti(username_loggato, nome_ricerca):
+
+  risultati = []
+  #pattern = f"utenti:{nome_ricerca}*"
+
+  # Scansione di tutti gli hash utente
+  for key, value in r.scan(match="utenti:*", type = "hash"):
+    pattern = "utenti:" + nome_ricerca
+    
+    if value == f"utenti:{username_loggato}" or pattern not in value:
+        continue
+    
+    else:
+        risultati.append(r.hget(value, "nome"))
+
+  return risultati
 
 #   FUNZIONE AGGIUNTA CONTATTI
 def aggiuntacont(risultati, username):
