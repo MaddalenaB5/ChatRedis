@@ -199,24 +199,32 @@ def chat(username1, username2):
         
     else:
         print("L'utente può essere disturbato \n")
-        
+        scelta = str(input("messaggio effimero [y/n]: ")).lower()
         messaggio = str(input("> "))
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         score = now.timestamp()
-        
-        # aggiungo messaggio al sorted set
-        r.zadd(f"chat:{nome_chat}", {f"> {messaggio} ({timestamp})": score})
-        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio} ({timestamp})": score})
+
+        if scelta == "y":
+            # Imposta la scadenza per i singoli messaggi dopo 60 secondi
+            r.zadd(f"chat_ttl:{nome_chat}", {f"> {messaggio} ({timestamp})": score})
+            r.zadd(f"chat_ttl:{inv_nome_chat}", {f"< {messaggio} ({timestamp})": score})
+            r.expire(f"chat_ttl:{nome_chat}", 60)
+            r.expire(f"chat_ttl:{inv_nome_chat}", 60)
+        else:
+            # aggiungo messaggio al sorted set
+            r.zadd(f"chat:{nome_chat}", {f"> {messaggio} ({timestamp})": score})
+            r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio} ({timestamp})": score})
     
 
 def mostrare_chat(nome_chat, username2):
     print(f">> Chat con {username2} <<\n")
-    if r.exists(f"chat:{nome_chat}"):
-        for el in r.zrange(f"chat:{nome_chat}", 0, -1, withscores=False):
+    r.zunionstore(f"chat_mista:{nome_chat}", [f"chat_ttl:{nome_chat}", f"chat:{nome_chat}"])
+    if r.exists(f"chat_mista:{nome_chat}"):
+        for el in r.zrange(f"chat_mista:{nome_chat}", 0, -1, withscores=False):
             print(el)
     else:
-        return print("Non fare l'asociale e manda il primo messaggio!\n")          
+        return print("Non fare l'asociale e manda il primo messaggio!\n")            
 
 #per entrare nel primo     
 if __name__ == "__main__":
@@ -230,6 +238,5 @@ GRAFICO:
 2: Sistemare la parte grafica
 
 OPZIONALI
-1: chat a tempo (eliminazione dopo 1 min)
 2: notifiche 
 """

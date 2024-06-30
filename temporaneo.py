@@ -232,13 +232,9 @@ if __name__ == "__main__":
     main()
     
 """
-FUNZIONALE:
-1: 
-
 GRAFICO:
 2: Sistemare la parte grafica
 
 OPZIONALI
-1: chat a tempo (eliminazione dopo 1 min)
-2: notifiche 
+2: notifiche (PUBSUB)
 """
