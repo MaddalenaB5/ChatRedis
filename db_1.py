@@ -1,6 +1,6 @@
 import redis as red
 import hashlib
-import time
+import datetime
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
 r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
@@ -9,7 +9,6 @@ r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
                 charset="utf-8",
                 decode_responses=True,
                 password='4GVWbKjMnaiMtHaX56tTNKODmzblmYtq')
-print('Connesso')
 
 #Converte la password in un hash per motivi di sicurezza
 def hash_password(password):
@@ -89,17 +88,17 @@ def aggiungi_contatti(username, ris):
 
 
 # Funzione per la visualizzazione della lista dei contatti
-def vis_contatti(username, chattare = False):
+def vis_contatti(username, chattare = False, storico = False):
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
     if contatti[1:]:
         for i, contatto in enumerate(contatti[1:], start = 1):
             print(f"{i + 1}. {contatto}")
     
-        if chattare:
+        if chattare or storico:
             prova = int(input("Digita il numero del contatto con cui vuoi chattare: "))
             user2 = contatti[prova - 1]
             return user2
-    
+            
     else:
         print("La lista è vuota, lol.")
 
@@ -145,6 +144,7 @@ def main2(usernameloggato, loggato):
                        - (a)ggiungere un nuovo contatto?
                        - (v)isualizzare lista contatti?
                        - (c)hattare con un contatto?
+                       - Vedere lo (s)torico della chat?
                        - cambiare lo stato del (d)o not disturb?
                        - (t) per tornare. """).lower()
         
@@ -171,8 +171,14 @@ def main2(usernameloggato, loggato):
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 0) # modifica del valore in "disattivato"
                     print("Do Not Disturb disattivato")
             case "c":
-                user2 = vis_contatti(usernameloggato, True)
+                user2 = vis_contatti(usernameloggato, True, False)
                 chat(usernameloggato, user2)
+            
+            case "s":
+                user2 = vis_contatti(usernameloggato, False, True)
+                
+                mostrare_chat(usernameloggato + " - " + user2, user2)
+                
             case _:
                 print("Scelta non valida! Riprovare...")
 
@@ -195,19 +201,22 @@ def chat(username1, username2):
         print("L'utente può essere disturbato \n")
         
         messaggio = str(input("> "))
-        t = time.time()
+        now = datetime.datetime.now()
+        timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
+        score = now.timestamp()
+        
         # aggiungo messaggio al sorted set
-        r.zadd(f"chat:{nome_chat}", {f"> {messaggio}": t})
-        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio}": t})
+        r.zadd(f"chat:{nome_chat}", {f"> {messaggio} ({timestamp})": score})
+        r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio} ({timestamp})": score})
     
-
 
 def mostrare_chat(nome_chat, username2):
     print(f">> Chat con {username2} <<\n")
     if r.exists(f"chat:{nome_chat}"):
-        return print(r.zrange(f"chat:{nome_chat}", 0, -1, withscores=True))
+        for el in r.zrange(f"chat:{nome_chat}", 0, -1, withscores=False):
+            print(el)
     else:
-        return print("Non fare l'asociale e manda il primo messaggio!\n")            
+        return print("Non fare l'asociale e manda il primo messaggio!\n")          
 
 #per entrare nel primo     
 if __name__ == "__main__":
@@ -215,10 +224,10 @@ if __name__ == "__main__":
     
 """
 FUNZIONALE:
-1: Dare la possibilità di vedere solo i messaggi, senza scriverne nuovi
+1: 
 
 GRAFICO:
-2: Sistemare la parte grafica (uguale alla consegna) "PRIORITA'"
+2: Sistemare la parte grafica
 
 OPZIONALI
 1: chat a tempo (eliminazione dopo 1 min)
