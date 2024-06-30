@@ -1,49 +1,53 @@
-import redis
+import redis as red
 import hashlib
-import getpass
 import time
 
-#Connetti al server Redis cloud del tuo collega con autenticazione
-r = redis.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
+# Connetti al server Redis cloud del tuo collega con autenticazione
+r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
                 port=18934,
                 db=0,
                 charset="utf-8",
                 decode_responses=True,
                 password='4GVWbKjMnaiMtHaX56tTNKODmzblmYtq')
+print('Connesso')
 
 #Converte la password in un hash per motivi di sicurezza
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-#   FUNZIONE REGISTRAZIONE
-def registrazione2(username, password):
+
+# Funzione che gestisce la registrazione dell'utente
+def registrazione(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
-        print("Nome Utente già utilizzato. Sceglierne un'altro...")
+        print("Nome Utente già utilizzato. Sceglierne un altro...")
         return False
     
     password_hash = hash_password(password)
     
+    # Creazione hash con nome utente e password, lista dei contatti inizializzata con un solo elemento, bitmap per il DnD
     r.hset(f"utenti:{username}","nome",username)
-    r.hset(f"utenti:{username}","password",password_hash)
-    r.rpush(f"utenti:{username}","contatti",)
-    r.setbit(f"utenti:{username}","dnd",0,0)
-    
+    r.hset(f"utenti:{username}","password",password_hash) 
+    r.lpush(f"utenti:{username}:contatti", "trovati:")
+    r.setbit(f"utenti:{username}:dnd", 0,0)
+
     return True
 
-#   FUNZIONE LOGIN
+
+# Funzione per il login dell'utente
 def login(username, password):
-    if not r.hexists(f"utenti:{username}", "nome"):
+    if not r.hexists(f"utenti:{username}", "nome"): #controlla l'esistenza dell'hash associato all'utente
         print("Nome utente inesistente o password sbagliata. Riprovare...")
         return False
     
-    password_salvata = r.hget(f"utenti:{username}", "password")
+    password_salvata = r.hget(f"utenti:{username}", "password") #get della password contenuta nell'hash associato all'utente
     if password_salvata == hash_password(password):
         return True
     else:
         print("Nome utente inesistente o password sbagliata. Riprovare...")
         return False
 
-#   FUNZIONE RICERCA UTENTE
+
+# funzione ricerca utenti
 def ricerca_utenti(nome):
     cursor = 0
     risultati = []
@@ -58,45 +62,47 @@ def ricerca_utenti(nome):
             break
     return risultati
 
-#   FUNZIONE AGGIUNTA CONTATTI
-def aggiuntacont(risultati, username):
-    if not risultati:
-        print("Nessun utente trovato.")
-        return
+
+# Funzione per aggiungere nuovi contatti
+def aggiungi_contatti(username, ris):
     
-    # Visualizza i risultati trovati
-    print("Utenti trovati:")
-    for idx, user in enumerate(risultati, start=1):
-        print(f"{idx}. {user}")
+    if ris:
+        
+        for i, contatto in enumerate(ris, start = 1):
+                print(f"{i}. {contatto}")
     
-    try:
-        # Permette all'utente di scegliere un utente dai risultati
-        scelta = int(input("Quale scegli? Inserisci il numero corrispondente: ")) - 1
-        
-        if scelta < 0 or scelta >= len(risultati):
-            print("Scelta non valida.")
-            return
-        
-        utentedaagg = risultati[scelta]
-        
-        # Verifica se l'utente scelto è già nei contatti
-        contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)
-        
-        if utentedaagg not in contatti:
-            r.rpush(f"utenti:{username}:contatti", utentedaagg)
-            print(f"{utentedaagg} è stato aggiunto ai tuoi contatti.")
-            print("I tuoi contatti sono: \n", r.lrange(f"utenti:{username}:contatti", 0, -1))
+        utentedaagg = int(input("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+        contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
+        contatto_selezionato = ris[utentedaagg - 1]
+        if contatto_selezionato in contatti:
+            print('Contatto già presente')
         else:
-            print("Utente già presente nei contatti.")
-    except ValueError:
-        print("Scelta non valida. Inserisci un numero.")
+            contatti.append(contatto_selezionato)
+            r.rpush(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
+            print("i tuoi contatti sono: \n", contatti)
+           #sistemare senza inserimento parziale già fatto sopra
+           # mettere la condizione per il quale il contatto non sia già presente nella lista contatti
+    
+    else:
+        print("La ricerca non è andata a buon fine, impossibile aggiungere contatti.")
+
+
 
 # Funzione per la visualizzazione della lista dei contatti
-def vis_contatti(username):
+def vis_contatti(username, chattare = False):
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
-    if contatti:
+    if contatti[1:]:
         for i, contatto in enumerate(contatti[1:], start = 1):
             print(f"{i + 1}. {contatto}")
+    
+        if chattare:
+            prova = int(input("Digita il numero del contatto con cui vuoi chattare: "))
+            user2 = contatti[prova - 1]
+            return user2
+    
+    else:
+        print("La lista è vuota, lol.")
+
 
 # Prima parte del menù, gestisce registrazione, login e DnD
 def main(loggato = False):
@@ -111,7 +117,7 @@ def main(loggato = False):
             case "r":
                 username = input("Inserire l'username: ").lower()
                 password = input("Inserire la password: ")
-                registrazione2(username, password)
+                registrazione(username, password)
                 
             case "l":
                 username = input("Inserire l'username: ").lower()
@@ -149,12 +155,9 @@ def main2(usernameloggato, loggato):
                 break
               
             case "a":
-                nome_ricerca = input(str("Inserire l'username da trovare: ")).lower()
+                nome_ricerca = str(input("Inserire l'username da trovare: ")).lower()
                 risultati = ricerca_utenti(nome_ricerca)
-                if risultati:
-                    aggiuntacont(risultati, usernameloggato )
-                else:
-                    print("Nessun utente trovato con questo nome.")
+                aggiungi_contatti(usernameloggato, risultati)
             
             case "v":
                 vis_contatti(usernameloggato)
@@ -209,3 +212,15 @@ def mostrare_chat(nome_chat, username2):
 #per entrare nel primo     
 if __name__ == "__main__":
     main()
+    
+"""
+FUNZIONALE:
+1: Dare la possibilità di vedere solo i messaggi, senza scriverne nuovi
+
+GRAFICO:
+2: Sistemare la parte grafica (uguale alla consegna) "PRIORITA'"
+
+OPZIONALI
+1: chat a tempo (eliminazione dopo 1 min)
+2: notifiche 
+"""
