@@ -120,7 +120,7 @@ def main(loggato = False):
             
             case "q":
                 print("Arrivederci!")
-                exit()
+                break
             
             case "r":
                 flag = str(input("Sei sicuro che vuoi registrarti? [y/n]")).lower()
@@ -191,8 +191,10 @@ def main2(usernameloggato, loggato):
             
             case "s":
                 user2 = vis_contatti(usernameloggato, False, True)
+                nome_chat = usernameloggato + " - " + user2
+                inv_nome_chat = user2 + " - " + usernameloggato
                 
-                mostrare_chat(usernameloggato + " - " + user2, user2)
+                mostrare_chat(nome_chat, inv_nome_chat, user2)
                 
             case _:
                 print("Scelta non valida! Riprovare...")
@@ -204,7 +206,7 @@ def chat(username1, username2):
     nome_chat = username1 + " - " + username2
     inv_nome_chat = username2 + " - " + username1
 
-    mostrare_chat(nome_chat, username2)
+    mostrare_chat(nome_chat, inv_nome_chat, username2) # modificato
 
     # scrittura messaggio e tempo
     valdnd = r.getbit(f"utenti:{username2}:dnd", 0)
@@ -232,26 +234,25 @@ def chat(username1, username2):
             r.zadd(f"chat:{inv_nome_chat}", {f"< {messaggio} ({timestamp})": score})
     
 
-def mostrare_chat(nome_chat, username2):
+def mostrare_chat(nome_chat, inv_nome_chat, username2):
     print(f">> Chat con {username2} <<\n")
     r.zunionstore(f"chat_mista:{nome_chat}", [f"chat_ttl:{nome_chat}", f"chat:{nome_chat}"])
+    r.zunionstore(f"chat_mista:{inv_nome_chat}", [f"chat_ttl:{inv_nome_chat}", f"chat:{inv_nome_chat}"]) # modificato
+    
     if r.exists(f"chat_mista:{nome_chat}"):
         for el in r.zrange(f"chat_mista:{nome_chat}", 0, -1, withscores=False):
             print(el)
     else:
-        return print("Non fare l'asociale e manda il primo messaggio!\n")            
+        return print("Non fare l'asociale e manda il primo messaggio!\n")             
 
 #per entrare nel primo     
 if __name__ == "__main__":
     main()
     
 """
-FUNZIONALE:
-1: 
-
 GRAFICO:
 2: Sistemare la parte grafica
 
 OPZIONALI
-2: notifiche 
+2: notifiche PUBSUB
 """
