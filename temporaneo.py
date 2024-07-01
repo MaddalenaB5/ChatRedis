@@ -41,7 +41,7 @@ def login(username, password):
     
     password_salvata = r.hget(f"utenti:{username}", "password") #get della password contenuta nell'hash associato all'utente
     if password_salvata == hash_password(password):
-        subscribe(username)
+        threading.Thread(target=subscribe, args=(username,), daemon=True).start()
         return True
     else:
         print("\n<<< Nome utente inesistente o password sbagliata. Riprovare...")
@@ -337,10 +337,15 @@ def pubmessages(canale, message):
 def subscribe(username):     #Utente automaticamente iscritto al canale nel momento in cui viene creato (il canale)
     pubsub = r.pubsub()
     notifica = f"notifica: {username}"
-    pubsub.subscribe(notifica)  
-    for messaggio in pubsub.listen():
-        if messaggio["type"] == "message":
-            print("notifica in tempo reale:", messaggio["data"])
+    pubsub.subscribe(notifica)
+
+    def notifica_live():
+        for messaggio in pubsub.listen():
+            if messaggio["type"] == "message":
+                print("notifica in tempo reale:", messaggio["data"])
+    
+    threading.Thread(target=notifica_live, daemon=True).start()
+
 
 #funzione messaggi
 def chat(username1, username2):
