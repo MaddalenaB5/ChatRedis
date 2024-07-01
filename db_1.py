@@ -18,7 +18,7 @@ def hash_password(password):
 # Funzione che gestisce la registrazione dell'utente
 def registrazione(username, password):
     if r.hexists(f"utenti:{username}", "nome"):
-        print("Nome Utente già utilizzato. Sceglierne un altro...")
+        print("\n<<< Nome Utente già utilizzato. Sceglierne un altro...")
         return False
     
     password_hash = hash_password(password)
@@ -35,14 +35,14 @@ def registrazione(username, password):
 # Funzione per il login dell'utente
 def login(username, password):
     if not r.hexists(f"utenti:{username}", "nome"): #controlla l'esistenza dell'hash associato all'utente
-        print("Nome utente inesistente o password sbagliata. Riprovare...")
+        print("\n<<< Nome utente inesistente o password sbagliata. Riprovare...")
         return False
     
     password_salvata = r.hget(f"utenti:{username}", "password") #get della password contenuta nell'hash associato all'utente
     if password_salvata == hash_password(password):
         return True
     else:
-        print("Nome utente inesistente o password sbagliata. Riprovare...")
+        print("\n<<< Nome utente inesistente o password sbagliata. Riprovare...")
         return False
 
 
@@ -68,22 +68,22 @@ def aggiungi_contatti(username, ris):
     if ris:
         
         for i, contatto in enumerate(ris, start = 1):
-                print(f"{i}. {contatto}")
+                print(f"\n[{i}] - {contatto}")
     
-        utentedaagg = int(input("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+        utentedaagg = int(input("\n> Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
         contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
         contatto_selezionato = ris[utentedaagg - 1]
         if contatto_selezionato in contatti:
-            print('Contatto già presente')
+            print('\n<<< Contatto già presente')
         else:
             contatti.append(contatto_selezionato)
             r.rpush(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
-            print("i tuoi contatti sono: \n", contatti)
+            print("\n<<< i tuoi contatti sono: \n", contatti[1:])
            #sistemare senza inserimento parziale già fatto sopra
            # mettere la condizione per il quale il contatto non sia già presente nella lista contatti
     
     else:
-        print("La ricerca non è andata a buon fine, impossibile aggiungere contatti.")
+        print("\n<<< La ricerca non è andata a buon fine, nome utente inesistente.")
 
 
 
@@ -92,26 +92,29 @@ def vis_contatti(username, chattare = False, storico = False):
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
     if contatti[1:]:
         for i, contatto in enumerate(contatti[1:], start = 1):
-            print(f"{i + 1}. {contatto}")
+            print(f"\n[{i}] - {contatto}")
     
         if chattare or storico:
-            prova = int(input("Digita il numero del contatto con cui vuoi chattare: "))
-            user2 = contatti[prova - 1]
+            numero = int(input("\n> Digita il numero del contatto con cui vuoi chattare: "))
+            user2 = contatti[numero]
             return user2
             
     else:
-        print("La lista è vuota, lol.")
+        print("\n<<< Hai la lista contatti vuota.")
 
 
 # Prima parte del menù, gestisce registrazione, login e DnD
 def main(loggato = False):
     while True:
         print("""
-          Benvenuto in ChatRedis!
-
-          - Registrazione: (r)
-          - Login: (l)
-          - Uscire: (q)
+=============================================            
+ __________________________________________
+|         Benvenuto in ChatRedis!          |
+|                                          |
+|          - Registrazione: (r)            |
+|          - Login: (l)                    |
+|          - Uscire: (q)                   |
+|__________________________________________|
         """)
 
         scelta = input("\nInserisci la tua scelta (r, l, q): ").lower()
@@ -119,49 +122,121 @@ def main(loggato = False):
         match scelta:
             
             case "q":
-                print("Arrivederci!")
+                print("\nArrivederci!")
                 break
             
             case "r":
-                flag = str(input("Sei sicuro che vuoi registrarti? [y/n]")).lower()
+                flag = str(input("\nSei sicuro che vuoi registrarti? [y/n]  ")).lower()
                 if flag == "y":
-                    username = input("\n Inserire l'username: ").lower()
-                    password = input(" Inserire la password: ")
+                    while True:
+                        print("""\n\n
+---------- Fase di Registrazione ----------
+                              """)
+                        username = input("\n> Inserire l'username: ").lower()
+                        password = input("> Inserire la password: ")
+    
+                        if registrazione(username, password):
+                            print(""""
+<<< Registrazione avvenuta con successo!
 
-                    if registrazione(username, password):
-                        print("Registrazione avvenuta con successo!")
-                    else:
-                        print("Registrazione fallita. Riprova.")
+---------- Fine Registrazione ----------""")
+                            loggato = login(username, password)
+                            break
+                        else:
+                            print("""
+ __________________________________                                        
+| - Se vuoi uscire scrivi t        |
+|                                  |
+| - Se vuoi riprovare premi INVIO: |
+|__________________________________|""")
+
+                            flag = input("\n> ")
+                            
+                            if flag == "t":
+                                print(""""
+<<< Registrazione fallita.
+
+---------- Fine Registrazione ----------""")
+                                break
                 
             case "l":
-                username = input("\n Inserire l'username: ").lower()
-                password = input(" Inserire la password: ")
-                loggato = login(username, password)
-                
+                while True:
+                    print("""\n\n
+---------- Fase di Login ----------
+                                  """)
+                    
+                    username = input("\n> Inserire l'username: ").lower()
+                    password = input("> Inserire la password: ")
+                    loggato = login(username, password)
+                    
+                    if not loggato:
+                        print("""
+ __________________________________                                        
+| - Se vuoi uscire scrivi t        |
+|                                  |
+| - Se vuoi riprovare premi INVIO: |
+|__________________________________|""")
+
+                        flag = input("\n> ")
+                            
+                        if flag == "t":
+                            print(""""
+<<< Login fallito.
+
+---------- Fine Login ----------
+""")
+                            break
+                    else:
+                        print("""
+<<< Login effettuato!!
+
+---------- Fine Login ----------
+""")
+                        break
+                    
+
             case _:
-                print("Scelta non valida! Riprovare...")
+                print("\nScelta non valida! Riprovare...")
             
         if loggato == True:
+            print("""\n\n          
+---------- Info di Sistema ----------
+                  """)
             usernameloggato = username
 
             valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0)  # comando che estrae il bitmap DnD associato all'utente loggato
             if valdnd == 1:
-                print("Do Not Disturb attivo")
+                print("\n<<< Hai il Do Not Disturb attivo")
             else:
-                print("Do Not Disturb disattivo")
-
+                print("\n<<< Hai il Do Not Disturb disattivo")
+            
+            if not r.lrange(f"utenti:{username}:contatti", 0, -1)[1:]:
+                
+                print("\n<<< Hai una lista contatti vuota.")
+            print("""
+                  
+-------------------------------------
+                  """)
             main2(usernameloggato, loggato)
 
 # Seconda parte del menù, gestisce tutte le altre azioni
 def main2(usernameloggato, loggato):
     while True:
-        scelta = input("""Benvenuto! Vuoi:
-                       - (a)ggiungere un nuovo contatto?
-                       - (v)isualizzare lista contatti?
-                       - (c)hattare con un contatto?
-                       - Vedere lo (s)torico della chat?
-                       - cambiare lo stato del (d)o not disturb?
-                       - (t) per tornare. """).lower()
+        print(f"""
+=================================================
+     
+    Benvenuta/o {usernameloggato.title()}!!       
+ ______________________________________________
+|Vuoi:                                         |
+|   - (a)ggiungere un nuovo contatto?          |
+|   - (v)isualizzare lista contatti?           |
+|   - (c)hattare con un contatto?              |
+|   - Vedere lo (s)torico della chat?          |
+|   - cambiare lo stato del (d)o not disturb?  |
+|   - (t) per tornare.                         |
+|______________________________________________|""")
+
+        scelta = input("\n> Inserisci la tua scelta (a, v, c, s, d, t): ").lower()
         
         match scelta:
             
@@ -170,7 +245,7 @@ def main2(usernameloggato, loggato):
                 break
               
             case "a":
-                nome_ricerca = str(input("Inserire l'username da trovare: ")).lower()
+                nome_ricerca = str(input("\n> Inserire l'username da trovare: ")).lower()
                 risultati = ricerca_utenti(nome_ricerca)
                 aggiungi_contatti(usernameloggato, risultati)
             
@@ -181,10 +256,10 @@ def main2(usernameloggato, loggato):
                 valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0) # estrazione del bitmap DnD associato all'utente loggato
                 if valdnd == 0:
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 1) # modifica del valore in "attivo"
-                    print("Do Not Disturb attivato")
+                    print("\n<<< Do Not Disturb attivato")
                 else:
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 0) # modifica del valore in "disattivato"
-                    print("Do Not Disturb disattivato")
+                    print("\n<<< Do Not Disturb disattivato")
             case "c":
                 user2 = vis_contatti(usernameloggato, True, False)
                 chat(usernameloggato, user2)
@@ -197,7 +272,7 @@ def main2(usernameloggato, loggato):
                 mostrare_chat(nome_chat, inv_nome_chat, user2)
                 
             case _:
-                print("Scelta non valida! Riprovare...")
+                print("\n<<< Scelta non valida! Riprovare...")
 
 #   FUNZIONE MESSAGGISTICA
 
@@ -212,12 +287,11 @@ def chat(username1, username2):
     valdnd = r.getbit(f"utenti:{username2}:dnd", 0)
     
     if valdnd == 1:
-        print("L'utente non vuole essere disturbato.")
+        print("\n<<< L'utente ha il DnD attivo!")
         
     else:
-        print("L'utente può essere disturbato \n")
-        scelta = str(input("messaggio effimero [y/n]: ")).lower()
-        messaggio = str(input("> "))
+        scelta = str(input("\n> messaggio effimero? [y/n]: ")).lower()
+        messaggio = str(input("\n> "))
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         score = now.timestamp()
@@ -235,7 +309,7 @@ def chat(username1, username2):
     
 
 def mostrare_chat(nome_chat, inv_nome_chat, username2):
-    print(f">> Chat con {username2} <<\n")
+    print(f"\n\n>> Chat con {username2} <<\n")
     r.zunionstore(f"chat_mista:{nome_chat}", [f"chat_ttl:{nome_chat}", f"chat:{nome_chat}"])
     r.zunionstore(f"chat_mista:{inv_nome_chat}", [f"chat_ttl:{inv_nome_chat}", f"chat:{inv_nome_chat}"]) # modificato
     
@@ -250,9 +324,6 @@ if __name__ == "__main__":
     main()
     
 """
-GRAFICO:
-2: Sistemare la parte grafica
-
 OPZIONALI
 2: notifiche PUBSUB
 """

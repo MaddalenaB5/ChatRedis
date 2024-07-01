@@ -68,22 +68,22 @@ def aggiungi_contatti(username, ris):
     if ris:
         
         for i, contatto in enumerate(ris, start = 1):
-                print(f"{i}. {contatto}")
+                print(f"\n[{i}] - {contatto}")
     
-        utentedaagg = int(input("Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
+        utentedaagg = int(input("\n> Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
         contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
         contatto_selezionato = ris[utentedaagg - 1]
         if contatto_selezionato in contatti:
-            print('Contatto già presente')
+            print('\n<<< Contatto già presente')
         else:
             contatti.append(contatto_selezionato)
             r.rpush(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
-            print("i tuoi contatti sono: \n", contatti)
+            print("\n<<< i tuoi contatti sono: \n", contatti[1:])
            #sistemare senza inserimento parziale già fatto sopra
            # mettere la condizione per il quale il contatto non sia già presente nella lista contatti
     
     else:
-        print("La ricerca non è andata a buon fine, impossibile aggiungere contatti.")
+        print("\n<<< La ricerca non è andata a buon fine, nome utente inesistente.")
 
 
 
@@ -92,11 +92,11 @@ def vis_contatti(username, chattare = False, storico = False):
     contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
     if contatti[1:]:
         for i, contatto in enumerate(contatti[1:], start = 1):
-            print(f"{i + 1}. {contatto}")
+            print(f"\n[{i}] - {contatto}")
     
         if chattare or storico:
-            prova = int(input("Digita il numero del contatto con cui vuoi chattare: "))
-            user2 = contatti[prova - 1]
+            numero = int(input("\n> Digita il numero del contatto con cui vuoi chattare: "))
+            user2 = contatti[numero]
             return user2
             
     else:
@@ -107,6 +107,7 @@ def vis_contatti(username, chattare = False, storico = False):
 def main(loggato = False):
     while True:
         print("""
+=============================================            
  __________________________________________
 |         Benvenuto in ChatRedis!          |
 |                                          |
@@ -222,7 +223,8 @@ def main(loggato = False):
 def main2(usernameloggato, loggato):
     while True:
         print(f"""
-                     
+=================================================
+     
     Benvenuta/o {usernameloggato.title()}!!       
  ______________________________________________
 |Vuoi:                                         |
@@ -234,7 +236,7 @@ def main2(usernameloggato, loggato):
 |   - (t) per tornare.                         |
 |______________________________________________|""")
 
-        scelta = input("\nInserisci la tua scelta (a, v, c, s, d, t): ").lower()
+        scelta = input("\n> Inserisci la tua scelta (a, v, c, s, d, t): ").lower()
         
         match scelta:
             
@@ -243,7 +245,7 @@ def main2(usernameloggato, loggato):
                 break
               
             case "a":
-                nome_ricerca = str(input("Inserire l'username da trovare: ")).lower()
+                nome_ricerca = str(input("\n> Inserire l'username da trovare: ")).lower()
                 risultati = ricerca_utenti(nome_ricerca)
                 aggiungi_contatti(usernameloggato, risultati)
             
@@ -254,10 +256,10 @@ def main2(usernameloggato, loggato):
                 valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0) # estrazione del bitmap DnD associato all'utente loggato
                 if valdnd == 0:
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 1) # modifica del valore in "attivo"
-                    print("Do Not Disturb attivato")
+                    print("\n<<< Do Not Disturb attivato")
                 else:
                     r.setbit(f"utenti:{usernameloggato}:dnd",0, 0) # modifica del valore in "disattivato"
-                    print("Do Not Disturb disattivato")
+                    print("\n<<< Do Not Disturb disattivato")
             case "c":
                 user2 = vis_contatti(usernameloggato, True, False)
                 chat(usernameloggato, user2)
@@ -270,7 +272,7 @@ def main2(usernameloggato, loggato):
                 mostrare_chat(nome_chat, inv_nome_chat, user2)
                 
             case _:
-                print("Scelta non valida! Riprovare...")
+                print("\n<<< Scelta non valida! Riprovare...")
 
 #   FUNZIONE MESSAGGISTICA
 
@@ -285,12 +287,11 @@ def chat(username1, username2):
     valdnd = r.getbit(f"utenti:{username2}:dnd", 0)
     
     if valdnd == 1:
-        print("L'utente non vuole essere disturbato.")
+        print("\n<<< L'utente ha il DnD attivo!")
         
     else:
-        print("L'utente può essere disturbato \n")
-        scelta = str(input("messaggio effimero [y/n]: ")).lower()
-        messaggio = str(input("> "))
+        scelta = str(input("\n> messaggio effimero? [y/n]: ")).lower()
+        messaggio = str(input("\n> "))
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         score = now.timestamp()
@@ -308,7 +309,7 @@ def chat(username1, username2):
     
 
 def mostrare_chat(nome_chat, inv_nome_chat, username2):
-    print(f">> Chat con {username2} <<\n")
+    print(f"\n\n>> Chat con {username2} <<\n")
     r.zunionstore(f"chat_mista:{nome_chat}", [f"chat_ttl:{nome_chat}", f"chat:{nome_chat}"])
     r.zunionstore(f"chat_mista:{inv_nome_chat}", [f"chat_ttl:{inv_nome_chat}", f"chat:{inv_nome_chat}"]) # modificato
     
@@ -323,9 +324,6 @@ if __name__ == "__main__":
     main()
     
 """
-GRAFICO:
-2: Sistemare la parte grafica
-
 OPZIONALI
 2: notifiche PUBSUB
 """
