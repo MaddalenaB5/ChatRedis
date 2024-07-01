@@ -342,7 +342,10 @@ def subscribe(username):     #Utente automaticamente iscritto al canale nel mome
     def notifica_live():
         for messaggio in pubsub.listen():
             if messaggio["type"] == "message":
-                print("notifica in tempo reale:", messaggio["data"])
+                print("""
+===================================================
+<<< notifica in tempo reale: """, messaggio["data"],"""
+===================================================\n""")
     
     threading.Thread(target=notifica_live, daemon=True).start()
 
@@ -372,12 +375,6 @@ def chat(username1, username2):
 
         notifica = f"notifica: {username2}"
         pubmessages(notifica, f"Nuovo messaggio inviato da {username1}")
-        #subscribe(nome_chat)
-
-        # Avvia la sottoscrizione in un thread separato
-        #start_subscription(nome_chat)
-
-
 
         if scelta == "y":
             # Imposta la scadenza per i singoli messaggi dopo 60 secondi
