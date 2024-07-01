@@ -2,12 +2,18 @@
 
 DESCRIZIONE
 
-	ChatRedis è un sistema di messaggistica sviluppato in Python che sfrutta il database Redis per gestire le interazioni tra gli utenti. Questo progetto fornisce un'infrastruttura per la registrazione degli utenti, la gestione dei contatti, la chat in tempo reale e la visualizzazione dello storico dei messaggi.
+	ChatRedis è un sistema di messaggistica sviluppato in Python che sfrutta il database Redis per gestire le interazioni tra gli utenti.
+    Questo progetto fornisce un'infrastruttura per:
+    - la registrazione degli utenti;
+    - la gestione dei contatti;
+    - la chat in tempo reale;
+    - la visualizzazione dello storico dei messaggi.
 
 
 REQUISITI
 
-	Assicurati di avere installato Python 3.x sul tuo sistema. Puoi verificare la versione di Python con il seguente comando:
+	Assicurati di avere installato Python 3.x sul tuo sistema.
+    Puoi verificare la versione di Python con il seguente comando:
 
     python --version
 	
