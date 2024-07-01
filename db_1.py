@@ -317,7 +317,11 @@ def messaggistica(user):
             
             case "c":
                 user2 = vis_contatti(user, True, False)
-                chat(user, user2)
+                
+                if user2:
+                    chat(user, user2)
+                else:
+                    print("\n<<< Aggiungere un contatto prima di chattare.")
             
             case "s":
                 user2 = vis_contatti(user, False, True)
