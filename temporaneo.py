@@ -78,7 +78,7 @@ def aggiungi_contatti(username, ris):
         else:
             contatti.append(contatto_selezionato)
             r.rpush(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
-            print("\n<<< i tuoi contatti sono: \n", contatti[1:])
+            print("\n<<< i tuoi contatti sono: \n\n", contatti[1:])
            #sistemare senza inserimento parziale già fatto sopra
            # mettere la condizione per il quale il contatto non sia già presente nella lista contatti
     
@@ -136,7 +136,7 @@ def main(loggato = False):
                         password = input("> Inserire la password: ")
     
                         if registrazione(username, password):
-                            print(""""
+                            print("""
 <<< Registrazione avvenuta con successo!
 
 ---------- Fine Registrazione ----------""")
@@ -219,7 +219,7 @@ def main(loggato = False):
                   """)
             main2(usernameloggato, loggato)
 
-# Seconda parte del menù, gestisce tutte le altre azioni
+
 def main2(usernameloggato, loggato):
     while True:
         print(f"""
@@ -228,54 +228,106 @@ def main2(usernameloggato, loggato):
     Benvenuta/o {usernameloggato.title()}!!       
  ______________________________________________
 |Vuoi:                                         |
+|   - (g)estire il tuo profilo?                |
+|   - Andare nella sezione (c)hat?             |
+|   - (e)ffettuare il log-out?                 |
+|______________________________________________|""")
+
+        scelta = input("\n> Inserisci la tua scelta (g, c, e): ").lower()
+        
+        match scelta:
+            
+            case "e":
+                loggato = False
+                break
+            case "g":
+                gestione(usernameloggato)
+            
+            case "c":
+                messaggistica(usernameloggato)
+                
+            case _:
+                print("\n<<< Scelta non valida! Riprovare...")
+
+
+def gestione(user):
+    while True:
+        print(f"""
+              
+=================================================
+     
+    Gestione del profilo: {user.title()}       
+ ______________________________________________
+|Vuoi:                                         |
 |   - (a)ggiungere un nuovo contatto?          |
 |   - (v)isualizzare lista contatti?           |
-|   - (c)hattare con un contatto?              |
-|   - Vedere lo (s)torico della chat?          |
 |   - cambiare lo stato del (d)o not disturb?  |
 |   - (t) per tornare.                         |
 |______________________________________________|""")
 
-        scelta = input("\n> Inserisci la tua scelta (a, v, c, s, d, t): ").lower()
+        scelta = input("\n> Inserisci la tua scelta (a, v, t): ").lower()
         
         match scelta:
             
             case "t":
-                loggato = False
                 break
-              
+            
             case "a":
                 nome_ricerca = str(input("\n> Inserire l'username da trovare: ")).lower()
                 risultati = ricerca_utenti(nome_ricerca)
-                aggiungi_contatti(usernameloggato, risultati)
+                aggiungi_contatti(user, risultati)
             
             case "v":
-                vis_contatti(usernameloggato)
+                vis_contatti(user)
                 
             case "d":
-                valdnd = r.getbit(f"utenti:{usernameloggato}:dnd",0) # estrazione del bitmap DnD associato all'utente loggato
+                valdnd = r.getbit(f"utenti:{user}:dnd",0) # estrazione del bitmap DnD associato all'utente loggato
                 if valdnd == 0:
-                    r.setbit(f"utenti:{usernameloggato}:dnd",0, 1) # modifica del valore in "attivo"
+                    r.setbit(f"utenti:{user}:dnd",0, 1) # modifica del valore in "attivo"
                     print("\n<<< Do Not Disturb attivato")
                 else:
-                    r.setbit(f"utenti:{usernameloggato}:dnd",0, 0) # modifica del valore in "disattivato"
+                    r.setbit(f"utenti:{user}:dnd",0, 0) # modifica del valore in "disattivato"
                     print("\n<<< Do Not Disturb disattivato")
+                
+            case _:
+                print("\n<<< Scelta non valida! Riprovare...")
+                
+def messaggistica(user):
+    while True:
+        print(f"""
+              
+=================================================
+     
+    Sezione messaggi di: {user.title()}       
+ ______________________________________________
+|Vuoi:                                         |
+|   - (c)hattare con un contatto?              |
+|   - Vedere lo (s)torico della chat?          |
+|   - (t) per tornare.                         |
+|______________________________________________|""")
+
+        scelta = input("\n> Inserisci la tua scelta (c, s, t): ").lower()
+        
+        match scelta:
+            
+            case "t":
+                break
+            
             case "c":
-                user2 = vis_contatti(usernameloggato, True, False)
-                chat(usernameloggato, user2)
+                user2 = vis_contatti(user, True, False)
+                chat(user, user2)
             
             case "s":
-                user2 = vis_contatti(usernameloggato, False, True)
-                nome_chat = usernameloggato + " - " + user2
-                inv_nome_chat = user2 + " - " + usernameloggato
+                user2 = vis_contatti(user, False, True)
+                nome_chat = user + " - " + user2
+                inv_nome_chat = user2 + " - " + user
                 
                 mostrare_chat(nome_chat, inv_nome_chat, user2)
                 
             case _:
                 print("\n<<< Scelta non valida! Riprovare...")
-
-#   FUNZIONE MESSAGGISTICA
-
+                
+                
 #funzione messaggi
 def chat(username1, username2):
     nome_chat = username1 + " - " + username2
@@ -322,8 +374,3 @@ def mostrare_chat(nome_chat, inv_nome_chat, username2):
 #per entrare nel primo     
 if __name__ == "__main__":
     main()
-    
-"""
-OPZIONALI
-2: notifiche PUBSUB
-"""
