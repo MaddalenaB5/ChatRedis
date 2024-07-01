@@ -327,7 +327,20 @@ def messaggistica(user):
             case _:
                 print("\n<<< Scelta non valida! Riprovare...")
                 
-                
+# Funzione pubblicazione messaggio
+
+def pubmessages(canale, message):
+    r.publish(canale, message)
+
+#  Funzione iscrizione al canale     
+
+def subscribe(channel):     #Utente automaticamente iscritto al canale nel momento in cui viene creato (il canale)
+    pubsub = r.pubsub()
+    pubsub.subscribe(channel)
+    for messaggio in pubsub.listen():
+        if messaggio["type"] == "message":
+            print("notifica in tempo reale:", messaggio["data"])
+
 #funzione messaggi
 def chat(username1, username2):
     nome_chat = username1 + " - " + username2
@@ -347,6 +360,8 @@ def chat(username1, username2):
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         score = now.timestamp()
+        pubmessages(nome_chat, f"Nuovo messaggio inviato da {username1}")
+        subscribe(nome_chat)
 
         if scelta == "y":
             # Imposta la scadenza per i singoli messaggi dopo 60 secondi
@@ -370,6 +385,7 @@ def mostrare_chat(nome_chat, inv_nome_chat, username2):
             print(el)
     else:
         return print("Non fare l'asociale e manda il primo messaggio!\n")             
+
 
 #per entrare nel primo     
 if __name__ == "__main__":
