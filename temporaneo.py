@@ -1,6 +1,7 @@
 import redis as red
 import hashlib
 import datetime
+import threading
 
 # Connetti al server Redis cloud del tuo collega con autenticazione
 r = red.Redis(host='redis-18934.c328.europe-west3-1.gce.redns.redis-cloud.com',
@@ -40,6 +41,7 @@ def login(username, password):
     
     password_salvata = r.hget(f"utenti:{username}", "password") #get della password contenuta nell'hash associato all'utente
     if password_salvata == hash_password(password):
+        subscribe(username)
         return True
     else:
         print("\n<<< Nome utente inesistente o password sbagliata. Riprovare...")
@@ -328,15 +330,14 @@ def messaggistica(user):
                 print("\n<<< Scelta non valida! Riprovare...")
                 
 # Funzione pubblicazione messaggio
-
 def pubmessages(canale, message):
     r.publish(canale, message)
-
-#  Funzione iscrizione al canale     
-
-def subscribe(channel):     #Utente automaticamente iscritto al canale nel momento in cui viene creato (il canale)
+   
+#  Funzione iscrizione al canale  
+def subscribe(username):     #Utente automaticamente iscritto al canale nel momento in cui viene creato (il canale)
     pubsub = r.pubsub()
-    pubsub.subscribe(channel)
+    notifica = f"notifica: {username}"
+    pubsub.subscribe(notifica)  
     for messaggio in pubsub.listen():
         if messaggio["type"] == "message":
             print("notifica in tempo reale:", messaggio["data"])
@@ -346,7 +347,10 @@ def chat(username1, username2):
     nome_chat = username1 + " - " + username2
     inv_nome_chat = username2 + " - " + username1
 
-    mostrare_chat(nome_chat, inv_nome_chat, username2) # modificato
+    # Avvio il thread per la sottoscrizione ai messaggi del canale
+    threading.Thread(target=subscribe, args=(nome_chat,), daemon=True).start()
+
+    mostrare_chat(nome_chat, inv_nome_chat, username2)
 
     # scrittura messaggio e tempo
     valdnd = r.getbit(f"utenti:{username2}:dnd", 0)
@@ -360,8 +364,15 @@ def chat(username1, username2):
         now = datetime.datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         score = now.timestamp()
-        pubmessages(nome_chat, f"Nuovo messaggio inviato da {username1}")
-        subscribe(nome_chat)
+
+        notifica = f"notifica: {username2}"
+        pubmessages(notifica, f"Nuovo messaggio inviato da {username1}")
+        #subscribe(nome_chat)
+
+        # Avvia la sottoscrizione in un thread separato
+        #start_subscription(nome_chat)
+
+
 
         if scelta == "y":
             # Imposta la scadenza per i singoli messaggi dopo 60 secondi
@@ -385,7 +396,6 @@ def mostrare_chat(nome_chat, inv_nome_chat, username2):
             print(el)
     else:
         return print("Non fare l'asociale e manda il primo messaggio!\n")             
-
 
 #per entrare nel primo     
 if __name__ == "__main__":
