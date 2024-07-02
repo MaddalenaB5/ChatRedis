@@ -81,9 +81,6 @@ def aggiungi_contatti(username, ris):
             contatti.append(contatto_selezionato)
             r.rpush(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
             print("\n<<< i tuoi contatti sono: \n\n", contatti[1:])
-           #sistemare senza inserimento parziale già fatto sopra
-           # mettere la condizione per il quale il contatto non sia già presente nella lista contatti
-    
     else:
         print("\n<<< La ricerca non è andata a buon fine, nome utente inesistente.")
 
@@ -252,7 +249,7 @@ def main2(usernameloggato, loggato):
                 print("\n<<< Scelta non valida! Riprovare...")
 
 
-def gestione(user):
+def gestione(user): #user corrisponde all'utente loggato
     while True:
         print(f"""
               
@@ -335,15 +332,15 @@ def messaggistica(user):
                 
 # Funzione pubblicazione messaggio
 def pubmessages(canale, message):
-    r.publish(canale, message)
+    r.publish(canale, message) #metodo che pubblica il messaggio sul canale
    
 #  Funzione iscrizione al canale  
 def subscribe(username):     #Utente automaticamente iscritto al canale nel momento in cui viene creato (il canale)
-    pubsub = r.pubsub()
-    notifica = f"notifica: {username}"
-    pubsub.subscribe(notifica)
+    pubsub = r.pubsub() #crea l'oggetto pubsub
+    notifica = f"notifica: {username}" #crea il nome del canale per l'utente
+    pubsub.subscribe(notifica) 
 
-    def notifica_live():
+    def notifica_live(): # verrà eseguita in un thread differente
         for messaggio in pubsub.listen():
             if messaggio["type"] == "message":
                 print("""
