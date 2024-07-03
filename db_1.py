@@ -27,7 +27,7 @@ def registrazione(username, password):
     # Creazione hash con nome utente e password, lista dei contatti inizializzata con un solo elemento, bitmap per il DnD
     r.hset(f"utenti:{username}","nome",username)
     r.hset(f"utenti:{username}","password",password_hash) 
-    r.lpush(f"utenti:{username}:contatti", "trovati:")
+    r.sadd(f"utenti:{username}:contatti", "temporaneo")
     r.setbit(f"utenti:{username}:dnd", 0,0)
 
     return True
@@ -46,7 +46,6 @@ def login(username, password):
     else:
         print("\n<<< Nome utente inesistente o password sbagliata. Riprovare...")
         return False
-
 
 # funzione ricerca utenti
 def ricerca_utenti(nome):
@@ -73,24 +72,28 @@ def aggiungi_contatti(username, ris):
                 print(f"\n[{i}] - {contatto}")
     
         utentedaagg = int(input("\n> Inserisci il numero corrispondente al contatto che vuoi aggiungere: "))
-        contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #restituisce una lista di redis associata alla chiave contatti
+        contatti = r.smembers(f"utenti:{username}:contatti")  #restituisce una lista di redis associata alla chiave contatti
         contatto_selezionato = ris[utentedaagg - 1]
         if contatto_selezionato in contatti:
             print('\n<<< Contatto già presente')
+            return False
         else:
-            contatti.append(contatto_selezionato)
-            r.rpush(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
-            print("\n<<< i tuoi contatti sono: \n\n", contatti[1:])
+            contatti.add(contatto_selezionato)
+            contatti.discard("temporaneo")
+            r.sadd(f"utenti:{username}:contatti", contatto_selezionato) #comando che aggiunge l'elemento nella lista
+            print("\n<<< i tuoi contatti sono: \n\n", contatti)
+            return True
     else:
         print("\n<<< La ricerca non è andata a buon fine, nome utente inesistente.")
+        return False
 
 
 
 # Funzione per la visualizzazione della lista dei contatti
 def vis_contatti(username, chattare = False, storico = False):
-    contatti = r.lrange(f"utenti:{username}:contatti", 0, -1)  #recupera i contatti dell'utente
-    if contatti[1:]:
-        for i, contatto in enumerate(contatti[1:], start = 1):
+    contatti = r.smembers(f"utenti:{username}:contatti")  #recupera i contatti dell'utente
+    if "temporaneo" not in contatti:
+        for i, contatto in enumerate(contatti, start = 1):
             print(f"\n[{i}] - {contatto}")
     
         if chattare or storico:
@@ -209,7 +212,7 @@ def main(loggato = False):
             else:
                 print("\n<<< Hai il Do Not Disturb disattivo")
             
-            if not r.lrange(f"utenti:{username}:contatti", 0, -1)[1:]:
+            if len(r.smembers(f"utenti:{username}:contatti")) == 1:
                 
                 print("\n<<< Hai una lista contatti vuota.")
             print("""
@@ -274,7 +277,10 @@ def gestione(user): #user corrisponde all'utente loggato
             case "a":
                 nome_ricerca = str(input("\n> Inserire l'username da trovare: ")).lower()
                 risultati = ricerca_utenti(nome_ricerca)
-                aggiungi_contatti(user, risultati)
+                flag = aggiungi_contatti(user, risultati)
+                
+                if flag:
+                    r.srem(f"utenti:{user}:contatti", "temporaneo")
             
             case "v":
                 vis_contatti(user)
